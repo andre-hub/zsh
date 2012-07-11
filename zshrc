@@ -29,19 +29,6 @@ done
 autoload -U compinit
 compinit -i
 
-# include all libs
-for config_file (~/.zshlib/*.zsh) source $config_file
-
-# Load all of the plugins that were defined in ~/.zshrc
-for pluginfiles ($plugins); do
-    source ~/.zshplugins/$pluginfiles.plugin.zsh
-done
-
-if [ -f ~/.zshsecinclude ]; then
-    source ~/.zshsecinclude
-else
-    print "Note: ~/.zshsecinclude is not available."
-fi
 
 ###########         setopt          ###########
 
@@ -59,6 +46,24 @@ setopt HISTFINDNODUPS
 if [ -f /etc/zsh_completion ]; then
     . /etc/zsh_completion
 fi
+
+###########      load plugins       ###########
+
+# Load all of the plugins that were defined in ~/.zshrc
+for pluginfiles ($plugins); do
+    source ~/.zshplugins/$pluginfiles.plugin.zsh
+done
+
+if [ -f ~/.zshsecinclude ]; then
+    source ~/.zshsecinclude
+else
+        print "Note: ~/.zshsecinclude is not available."
+fi
+
+# include all libs
+for config_file (~/.zshlib/*.zsh); do
+    source $config_file
+done
 
 ###########          EXPORT          ###########
 

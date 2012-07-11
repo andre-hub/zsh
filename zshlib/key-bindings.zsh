@@ -1,3 +1,25 @@
+# Some useful keybindings
+#
+#  bindkey "^Y"    yank                                # <STRG>-Y
+#  bindkey "\e[3~" delete-char                         # Delete
+#  bindkey '^[[7~' beginning-of-line                   # Home (xterm)
+#  bindkey '^[[8~'  end-of-line                        # End (xterm)
+#  bindkey '^[[5~'  history-beginning-search-backward  # Page Up
+#  bindkey '^[[6~'  history-beginning-search-forward   # Page Down
+#  bindkey '^[[2~' overwrite-mode                      # Insert
+#  bindkey "^[[A"  up-line-or-search                   # <ESC>-N
+#  bindkey "^[[B"  down-line-or-search                 # <ESC>-
+#  bindkey "^Q"  edit-command-line                     # <STRG>-Q
+#  bindkey " "     magic-space                         # ' ' (Space>
+#  bindkey "^B"    backward-word                       # <STRG>-B
+#  bindkey "^E"    expand-cmd-path                     # <STRG>-E
+#  bindkey "^N"    forward-word                        # <STRG>-N
+#  bindkey "^R"    history-incremental-search-backward # <STRG>-R
+#  bindkey "^P"    quote-line                          # <STRG>-P
+#  bindkey "^K"    run-help                            # <STRG>-K
+#  bindkey "^Z"    which-command                       # <STRG>-Z
+#  bindkey "^X"    what-cursor-position                # <STRG>-X
+
 # TODO: Explain what some of this does..
 bindkey -e
 bindkey '\ew' kill-region
@@ -48,29 +70,6 @@ bindkey "\e[3~" delete-char
 ## Fix weird sequence that rxvt produces
 #bindkey -s '^[[Z' '\t'
 #
-
-
-# Some useful keybindings
-#
-#  bindkey "^Y"    yank                                # <STRG>-Y
-#  bindkey "\e[3~" delete-char                         # Delete
-#  bindkey '^[[7~' beginning-of-line                   # Home (xterm)
-#  bindkey '^[[8~'  end-of-line                        # End (xterm)
-#  bindkey '^[[5~'  history-beginning-search-backward  # Page Up
-#  bindkey '^[[6~'  history-beginning-search-forward   # Page Down
-#  bindkey '^[[2~' overwrite-mode                      # Insert
-#  bindkey "^[[A"  up-line-or-search                   # <ESC>-N
-#  bindkey "^[[B"  down-line-or-search                 # <ESC>-
-#  bindkey "^Q"  edit-command-line                     # <STRG>-Q
-#  bindkey " "     magic-space                         # ' ' (Space>
-#  bindkey "^B"    backward-word                       # <STRG>-B
-#  bindkey "^E"    expand-cmd-path                     # <STRG>-E
-#  bindkey "^N"    forward-word                        # <STRG>-N
-#  bindkey "^R"    history-incremental-search-backward # <STRG>-R
-#  bindkey "^P"    quote-line                          # <STRG>-P
-#  bindkey "^K"    run-help                            # <STRG>-K
-#  bindkey "^Z"    which-command                       # <STRG>-Z
-#  bindkey "^X"    what-cursor-position                # <STRG>-X
 
 case $TERM in
 xterm*)
@@ -130,11 +129,8 @@ bindkey "^E" expand-cmd-path		# $ ls<STRG+E> == /bin/ls
 
 run-with-sudo () { LBUFFER="sudo $LBUFFER" }
 zle -N run-with-sudo
-bindkey '^K' run-with-sudo
+bindkey "^K" run-with-sudo
 
-
-bindkey -e
-bindkey ' ' magic-space
 
 # Help Output of Bindings
 zshbindings() {
@@ -154,7 +150,7 @@ zshbindings() {
   echo "$fg_bold[blue]# forward-word                              $fg_bold[red]# <STRG>-N"
   echo "$fg_bold[blue]# history-incremental-search-backward       $fg_bold[red]# <STRG>-R"
   echo "$fg_bold[blue]# quote-line                                $fg_bold[red]# <STRG>-P"
-  echo "$fg_bold[blue]# run-help                                  $fg_bold[red]# <STRG>-K"
+  echo "$fg_bold[blue]# run-with-sudo                             $fg_bold[red]# <STRG>-K"
   echo "$fg_bold[blue]# which-command                             $fg_bold[red]# <STRG>-Z"
   echo "$fg_bold[blue]# what-cursor-position                      $fg_bold[red]# <STRG>-X"
   }
