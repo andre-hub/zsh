@@ -39,7 +39,7 @@ alias la='ls -A'
 alias l='ls -CF'
 alias rd="rm -irf"
 alias ht="htop"
-alias rsync="rsync --human-readable  --progress --recursive "
+alias rsync="rsync --human-readable  --progress --recursive -t"
 
 # starte Programm
 alias -s txt='nano'
@@ -52,3 +52,5 @@ hash -d RC=/etc/conf.d/             # Init-Files from init (Gentoo)
 hash -d RC=/etc/init.d/             # executed files from init (Gentoo, Debian, ..)
 
 alias insecssh='ssh -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null"'
+
+alias tree="find . -print | sed -e 's;[^/]*/;|____;g;s;____|; |;g'"

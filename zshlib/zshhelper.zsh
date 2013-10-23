@@ -41,10 +41,10 @@
 function pack() {
 	if [ $2 ]; then
 	  case $2 in
-	    tgz | tar.gz)   tar -zcvf$1.$2 $1 ;;
-	    tbz2 | tar.bz2) tar -jcvf$1.$2 $1 ;;
-	    tar.Z)          tar -Zcvf$1.$2 $1 ;;
-	    tar)            tar -cvf$1.$2  $1 ;;
+	    tgz | tar.gz)   tar -zcvf $1.$2 $1 ;;
+	    tbz2 | tar.bz2) tar -jcvf $1.$2 $1 ;;
+	    tar.Z)          tar -Zcvf $1.$2 $1 ;;
+	    tar)            tar -cvf $1.$2  $1 ;;
 	    gz | gzip)      gzip           $1 ;;
 	    bz2 | bzip2)    bzip2          $1 ;;
 	    7z |7zip)   7z a $1.$2     $1 ;;
@@ -94,11 +94,8 @@ function homeclean() {
   # simple backup of all files
   # (on future/todo: copy files to git repo dir and commit and upload to git hub)
   function zshbackup() {
-    BACKUPPATH="Dropbox/cfg-Desktop"
+    BACKUPPATH="workspace/zsh"
     echo "$fg_bold[red]Save all Login/ZSH Session Files:$fg_bold[white]"
-
-    cp ~/.xinitrc ~/$BACKUPPATH/xinitrc
-    echo "xinitrc"
 
     cp ~/.zshrc ~/$BACKUPPATH/zshrc
     echo "zshrc"
@@ -108,12 +105,6 @@ function homeclean() {
 
     cp ~/.zprofile ~/$BACKUPPATH/zprofile
     echo "zprofile"
-
-    cp ~/.zshbindings ~/$BACKUPPATH/zshbindings
-    echo "zshbindings"
-
-    cp ~/.dput.cf ~/$BACKUPPATH/dput.cf
-    echo "ppa upload"
 
     if [ ! -d ~/$BACKUPPATH/zshlib ]; then
 	  mkdir ~/$BACKUPPATH/zshlib
@@ -190,6 +181,14 @@ function homeclean() {
     else
       echo "gpg key not found"
     fi
+  }
+
+  function rsync-dotfiles() {
+  	if [ $1 ]; then
+       rsync --copy-links ~/.* $1  2> ~/rsync-dotfiles.log
+  	else
+  		echo "target dir is require"
+  	fi
   }
 
  function dl() {
@@ -280,4 +279,18 @@ shebang() {
 # http://www.commandlinefu.com/commands/view/5034/
 translate() {
     wget -qO- "http://ajax.googleapis.com/ajax/services/language/translate?v=1.0&q=$1&langpair=$2|${3:-en}" | sed 's/.*"translatedText":"\([^"]*\)".*}/\1\n/'
+}
+
+
+function gitCleanPull() {
+    git stash clear
+    git clean -f -f *
+    git pull
+    cd ..
+}
+
+function rDir() {
+    for d ($1/*(/)) {
+        cd $d && $2 && cd ..
+    } 
 }
