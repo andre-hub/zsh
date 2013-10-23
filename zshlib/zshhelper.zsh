@@ -285,12 +285,13 @@ translate() {
 function gitCleanPull() {
     git stash clear
     git clean -f -f *
-    git pull
-    cd ..
+    git checkout master --force
+    git pull --rebase
 }
 
 function rDir() {
     for d ($1/*(/)) {
+        echo $d
         cd $d && $2 && cd ..
     } 
 }
