@@ -61,6 +61,7 @@ function pack() {
 function homeclean() {
 	echo "cleaning home dir"
 	echo " - thumbnails"
+	/bin/rm -f ~/.local/share/grisbi/*
 	/bin/rm -f ~/.thumbnails/fail/thunar-vfs/*
 	/bin/rm -f ~/.thumbnails/normal/*
 	echo " - firefox"
