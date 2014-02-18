@@ -77,6 +77,13 @@ else
         print "Note: ~/.zsh-syntax-highlighting/ is not available."
 fi
 
+###########          TMUX            ###########
+if [ -z "$TMUX" ] && [ $TERM != "screen" ]; then
+   tmux attach -d
+   [ $? -eq 0 ] && exit
+   echo "WARNING: tmux exited with an error!" >&2
+fi
+
 ###########   Selfmade Login Intro   ###########
 uptimestart=`uptime | colrm 1 13 | colrm 6`
 print "$fg[red]Host: $fg[green]$HOST$fg[red], Zeit: $fg[green]`date +%d.%m.%Y' '%H:%M:%S`$fg[red], Up: $fg[green]$uptimestart"
