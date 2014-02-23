@@ -14,26 +14,60 @@
 # Usage: simple-extract <file>
 # Description: extracts archived files (maybe)
   function depack() {
-    if [[ -f $1 ]]; then
-      case $1 in
-        *.tar.bz2)  bzip2 -v -d $1      ;;
-        *.tar.gz)   tar -xvzf $1        ;;
-        *.rar)      unrar $1            ;;
-        *.deb)      ar -x $1            ;;
-        *.bz2)      bzip2 -d $1         ;;
-        *.lzh)      lha x $1            ;;
-        *.gz)       gunzip -d $1        ;;
-        *.tar)      tar -xvf $1         ;;
-        *.tgz)      gunzip -d $1        ;;
-        *.tbz2)     tar -jxvf $1        ;;
-        *.zip)      unzip $1            ;;
-        *.7z)       7z x $1             ;;
-        *.Z)        uncompress $1       ;;
-        *)          echo "'$1' Error. Please go away" ;;
-      esac
-    else
-      echo "'$1' is not a valid file"
-    fi
+	if [[ -f "$1" ]]; then
+		case "$1" in
+			*.tar.lrz)
+				b=$(basename "$1" .tar.lrz)
+				lrztar -d "$1" && [[ -d "$b" ]] && cd "$b" ;;
+			*.lrz)
+				b=$(basename "$1" .lrz)
+				lrunzip "$1" && [[ -d "$b" ]] && cd "$b" ;;
+			*.tar.bz2)
+				b=$(basename "$1" .tar.bz2)
+				tar xjf "$1" && [[ -d "$b" ]] && cd "$b" ;;
+			*.bz2)
+				b=$(basename "$1" .bz2)
+				bunzip2 "$1" && [[ -d "$b" ]] && cd "$b" ;;
+			*.tar.gz)
+				b=$(basename "$1" .tar.gz)
+				tar xzf "$1" && [[ -d "$b" ]] && cd "$b" ;;
+			*.gz)
+				b=$(basename "$1" .gz)
+				gunzip "$1" && [[ -d "$b" ]] && cd "$b" ;;
+			*.tar.xz)
+				b=$(basename "$1" .tar.xz)
+				tar Jxf "$1" && [[ -d "$b" ]] && cd "$b" ;;
+			*.xz)
+				b=$(basename "$1" .gz)
+				xz -d "$1" && [[ -d "$b" ]] && cd "$b" ;;
+			*.rar)
+				b=$(basename "$1" .rar)
+				unrar e "$1" && [[ -d "$b" ]] && cd "$b" ;;
+			*.tar)
+				b=$(basename "$1" .tar)
+				tar xf "$1" && [[ -d "$b" ]] && cd "$b" ;;
+			*.tbz2)
+				b=$(basename "$1" .tbz2)
+				tar xjf "$1" && [[ -d "$b" ]] && cd "$b" ;;
+			*.tgz)
+				b=$(basename "$1" .tgz)
+				tar xzf "$1" && [[ -d "$b" ]] && cd "$b" ;;
+			*.zip)
+				b=$(basename "$1" .zip)
+				unzip "$1" && [[ -d "$b" ]] && cd "$b" ;;
+			*.Z)
+				b=$(basename "$1" .Z)
+				uncompress "$1" && [[ -d "$b" ]] && cd "$b" ;;
+			*.7z)
+				b=$(basename "$1" .7z)
+				7z x "$1" && [[ -d "$b" ]] && cd "$b" ;;
+			*) echo "don't know how to extract '$1'..." && return 1;;
+		esac
+		return 0
+	else
+		echo "'$1' is not a valid file!"
+		return 1
+	fi
   }
 
 # Usage: smartcompress <file> (<type>)
@@ -95,7 +129,7 @@ function homeclean() {
   # simple backup of all files
   # (on future/todo: copy files to git repo dir and commit and upload to git hub)
   function zshbackup() {
-    BACKUPPATH="workspace/zsh"
+    BACKUPPATH="workspace/zsh.git"
     echo "$fg_bold[red]Save all Login/ZSH Session Files:$fg_bold[white]"
 
     cp ~/.zshrc ~/$BACKUPPATH/zshrc

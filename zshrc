@@ -68,7 +68,7 @@ done
 ###########          EXPORT          ###########
 
 export COLORTERM="yes"
-export EDITOR="nano"  # i like sublinetext2, gedit, ee
+export EDITOR="nano"  # i like sublinetext3, gedit, ee
 
 
 if [ -f ~/.zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
@@ -76,6 +76,7 @@ if [ -f ~/.zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
 else
         print "Note: ~/.zsh-syntax-highlighting/ is not available."
 fi
+
 
 ###########          TMUX            ###########
 if [ -z "$TMUX" ] && [ $TERM != "screen" ]; then
