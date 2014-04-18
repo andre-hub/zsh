@@ -1,8 +1,0 @@
-# My ZSH Cfg
-
-
-**example:**
-* update all git repositorys and clean before the workspace: rDir ~/dev/src gitCleanPull
-
-## Thanks
-*My first zsh cfg is from 2007 without thirdparty functions. (mosted libs and plugins from oh my zsh, thx for community).*
