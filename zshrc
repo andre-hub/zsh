@@ -68,7 +68,7 @@ done
 ###########          EXPORT          ###########
 
 export COLORTERM="yes"
-export EDITOR="nano"  # i like sublinetext3, gedit, ee
+export EDITOR="vim"  # i like vim, sublinetext3,ee
 
 
 if [ -f ~/.zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then

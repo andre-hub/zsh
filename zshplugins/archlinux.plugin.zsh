@@ -75,3 +75,11 @@ pacdisowned() {
 
   comm -23 "$fs" "$db"
 }
+
+function apt-date(){
+  sudo pacman -Syu
+}
+
+function ins(){
+  sudo pacman -S $1
+}

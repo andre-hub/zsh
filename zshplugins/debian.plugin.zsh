@@ -179,3 +179,31 @@ kerndeb () {
         "$revision" kernel_image kernel_headers
 }
 
+function packageinstall() {
+    case $2 in
+      single|allein)
+        for paket in $(cat $1); do
+          echo "\n\n" $paket;
+          sudo apt-get -y install $paket;
+          done
+          ;;
+      all|alles)
+        sudo apt-get -y install $(cat $1);
+        ;;
+      *)
+      echo "Fehler: $2 ist ungültig"
+      ;;
+    esac
+}
+
+function apt-date(){
+    if [ $1 ]; then
+        sudo aptitude update && sudo aptitude safe-upgrade && sudo aptitude autoclean && sudo aptitude clean && sudo aptitude autoremove
+    else
+        sudo apt-get update && sudo apt-get -y upgrade && sudo apt-get autoremove && sudo apt-get autoclean
+    fi
+}
+
+function ins(){
+    sudo apt-get -y install $1
+}
