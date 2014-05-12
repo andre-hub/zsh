@@ -11,31 +11,6 @@
    echo "# info: sudo sysctl vm.swappiness=0"
    }
 
-
-function openurl {
-  URL=$1
-
-  CNTFF=`findBrowser "firefox"`
-  CNTCH=`findBrowser "chromium"`
-
-  echo "$*" > $HOME/logurls
-
-  if [ $CNTFF -ge 1 ] 
-  then
-      /usr/bin/firefox "$URL"
-  elif [ $CNTCH -ge 1 ] 
-  then
-      /usr/bin/chromium "$URL"
-  else
-      echo "No running browser instance"
-  fi
-}
-
-function findBrowser {
-    processName=$1
-    ps ax | grep "$processName" | grep -v grep | wc -l
-}
-
 # Usage: simple-extract <file>
 # Description: extracts archived files (maybe)
   function depack() {
@@ -354,13 +329,4 @@ function rDir() {
         echo $d
         cd $d && $2 && cd ..
     } 
-}
-
-function zsh_stats() {
-  history | awk '{print $2}' | sort | uniq -c | sort -rn | head
-}
-
-function take() {
-  mkdir -p $1
-  cd $1
 }

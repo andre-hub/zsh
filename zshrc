@@ -3,7 +3,8 @@
 ###############################################
 
 ###########      Start/Loader       ###########
-plugins=(archlinux github ssh-agent gnu-utils gpg-agent vi-mode git-flow mercurial git package)
+#plugins=(debian github ssh-agent gnu-utils gpg-agent vi-mode git-flow mercurial git package)
+plugins=(debian ssh-agent ssh-agent git)
 zshlib="~/.zshlib"
 
 # If not running interactively, don't do anything

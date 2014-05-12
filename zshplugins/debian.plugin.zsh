@@ -207,3 +207,25 @@ function apt-date(){
 function ins(){
     sudo apt-get -y install $1
 }
+
+function packagelist() {
+   Y=`date +%Y-%m-%d`
+   dpkg-query -l  | grep ^ii | awk '{print $2}' > ~/debian-apt-pkglist-$Y.txt
+}
+
+function packagerestore() {
+    Y=`date +%Y-%m-%d`
+    sudo dpkg --set-selections < ~/debian-apt-pkglist-$Y.txt
+    sudo apt-get dselect-upgrade 
+}
+
+function build1(){
+   ./configure  &&  fakeroot dpkg-buildpackage
+}
+
+function build2(){
+   dh_make --createorig -s --email $1
+   dpkg-buildpackage -S -sa -rfakeroot
+   sudo pbuilder create ../*.dsc
+   sudo pbuilder build ../*.dsc
+}
