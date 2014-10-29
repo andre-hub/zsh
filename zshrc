@@ -28,11 +28,10 @@ done
 
 # Load and run compinit
 autoload -U compinit
+autoload -U add-zsh-hook
 compinit -i
 
-
 ###########         setopt          ###########
-
 setopt autocd
 setopt share_history
 setopt correct
@@ -41,7 +40,9 @@ setopt APPEND_HISTORY
 setopt nobeep
 setopt interactivecomments
 setopt HISTFINDNODUPS
-setopt HISTFINDNODUPS
+
+# Allow for functions in the prompt.
+setopt PROMPT_SUBST
 
 # enable programmable completion features
 if [ -f /etc/zsh_completion ]; then
@@ -67,17 +68,14 @@ for config_file (~/.zshlib/*.zsh); do
 done
 
 ###########          EXPORT          ###########
-
 export COLORTERM="yes"
 export EDITOR="vim"  # i like vim, sublinetext3,ee
-
 
 if [ -f ~/.zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
         source ~/.zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 else
         print "Note: ~/.zsh-syntax-highlighting/ is not available."
 fi
-
 
 ###########          TMUX            ###########
 if [ -z "$TMUX" ] && [ $TERM != "screen" ]; then
@@ -86,8 +84,14 @@ if [ -z "$TMUX" ] && [ $TERM != "screen" ]; then
    echo "WARNING: tmux exited with an error!" >&2
 fi
 
+alias browse='thunar'
+
 ###########   Selfmade Login Intro   ###########
 uptimestart=`uptime | colrm 1 13 | colrm 6`
 print "$fg[red]Host: $fg[green]$HOST$fg[red], Zeit: $fg[green]`date +%d.%m.%Y' '%H:%M:%S`$fg[red], Up: $fg[green]$uptimestart"
 print "$fg[red]Term: $fg[green]$TTY $fg[red], $fg[red]Shell: $fg[green]Zsh $ZSH_VERSION $fg[red] (PID=$$)"
 print "$fg[red]Login: $fg[green]$LOGNAME $fg[red] (UID=$EUID), cars: $fg[green]$COLUMNS x $LINES"
+
+#PROMPT='%n@%m:%~%# '
+#PROMPT='%B%m%~%b$(git_super_status) %# '
+PROMPT='%n@%m: ~%b$(git_super_status) %~%# '

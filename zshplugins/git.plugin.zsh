@@ -1,27 +1,48 @@
+GIT_PROMPT_EXECUTABLE='python'
+
 # Aliases
+alias git='LANG=en_US.UTF-8 git'
 alias g='git'
 compdef g=git
-alias gst='git status'
-compdef _git gst=git-status
-alias gl='git pull'
-compdef _git gl=git-pull
-alias gup='git fetch && git rebase'
-compdef _git gup=git-fetch
-alias gp='git push'
-compdef _git gp=git-push
-gdv() { git diff -w "$@" | view - }
-compdef _git gdv=git-diff
-alias gc='git commit -v'
-compdef _git gc=git-commit
-alias gca='git commit -v -a'
+alias gaa='git aa'
+compdef _git gpl=git-add
+alias gad='git ad'
+compdef _git gpl=git-add
+alias gau='git au'
+compdef _git gpl=git-add
+alias gbr='git br -a'
+compdef _git gbr=git-branch
+alias gca='git ca'
 compdef _git gca=git-commit
-alias gco='git checkout'
-compdef _git gco=git-checkout
-alias gcm='git checkout master'
-alias gb='git branch'
-compdef _git gb=git-branch
-alias gba='git branch -a'
-compdef _git gba=git-branch
+alias gch='git ch'
+compdef _git gch=git-checkout
+alias gco='git co -v'
+compdef _git gc=git-commit
+alias gfe='git fe'
+compdef _git gpl=git-fetch
+alias glg='g lg'
+compdef _git gpl=git-log
+alias gmt='git mergetool'
+compdef _git gpl=git-mergetool
+alias gpl='git pl'
+compdef _git gpl=git-pull
+alias gps='git ps'
+compdef _git gps=git-push
+gdv() { git diff -w "$@" | view - }
+alias grb='git rb'
+compdef _git gpl=git-rebase
+alias grc='git rebase --continue'
+alias gst='git st'
+compdef _git gst=git-status
+alias gua='gitg'
+compdef _gitg gitg=gitg
+alias gif='git diff'
+compdef _git gif=git-diff
+alias gfp='git fetch --all --tags --prune'
+compdef _git gfp=git-fetch
+alias gup='git fetch --all && git rebase'
+compdef _git gup=git-fetch
+
 alias gcount='git shortlog -sn'
 compdef gcount=git
 alias gcp='git cherry-pick'
@@ -45,14 +66,6 @@ compdef git-svn-dcommit-push=git
 
 alias gsr='git svn rebase'
 alias gsd='git svn dcommit'
-#
-# Will return the current branch name
-# Usage example: git pull origin $(current_branch)
-#
-function current_branch() {
-  ref=$(git symbolic-ref HEAD 2> /dev/null) || return
-  echo ${ref#refs/heads/}
-}
 
 # these aliases take advantage of the previous function
 alias ggpull='git pull origin $(current_branch)'
@@ -61,3 +74,103 @@ alias ggpush='git push origin $(current_branch)'
 compdef ggpush=git
 alias ggpnp='git pull origin $(current_branch) && git push origin $(current_branch)'
 compdef ggpnp=git
+
+
+
+export __GIT_PROMPT_DIR=${0:A:h}
+export GIT_PROMPT_EXECUTABLE=${GIT_PROMPT_USE_PYTHON:-"python"}
+
+# Will return the current branch name
+# Usage example: git pull origin $(current_branch)
+#
+function current_branch() {
+  ref=$(git symbolic-ref HEAD 2> /dev/null) || return
+  echo ${ref#refs/heads/}
+}
+
+
+## Function definitions
+function preexec_update_git_vars() {
+    case "$2" in
+        git*|hub*|gh*|stg*)
+        __EXECUTED_GIT_COMMAND=1
+        ;;
+    esac
+}
+
+function precmd_update_git_vars() {
+    if [ -n "$__EXECUTED_GIT_COMMAND" ] || [ ! -n "$ZSH_THEME_GIT_PROMPT_CACHE" ]; then
+        update_current_git_vars
+        unset __EXECUTED_GIT_COMMAND
+    fi
+}
+
+function chpwd_update_git_vars() {
+    update_current_git_vars
+}
+
+function update_current_git_vars() {
+    unset __CURRENT_GIT_STATUS
+
+    if [[ "$GIT_PROMPT_EXECUTABLE" == "python" ]]; then
+        local gitstatus="$__GIT_PROMPT_DIR/gitstatus.py"
+        _GIT_STATUS=`python ${gitstatus} 2>/dev/null`
+    fi
+    if [[ "$GIT_PROMPT_EXECUTABLE" == "haskell" ]]; then
+        local gitstatus="$__GIT_PROMPT_DIR/dist/build/gitstatus/gitstatus"
+        _GIT_STATUS=`${gitstatus}`
+    fi
+    __CURRENT_GIT_STATUS=("${(@f)_GIT_STATUS}")
+	GIT_BRANCH=$__CURRENT_GIT_STATUS[1]
+	GIT_AHEAD=$__CURRENT_GIT_STATUS[2]
+	GIT_BEHIND=$__CURRENT_GIT_STATUS[3]
+	GIT_STAGED=$__CURRENT_GIT_STATUS[4]
+	GIT_CONFLICTS=$__CURRENT_GIT_STATUS[5]
+	GIT_CHANGED=$__CURRENT_GIT_STATUS[6]
+	GIT_UNTRACKED=$__CURRENT_GIT_STATUS[7]
+}
+
+
+git_super_status() {
+	precmd_update_git_vars
+    if [ -n "$__CURRENT_GIT_STATUS" ]; then
+	  STATUS="$ZSH_THEME_GIT_PROMPT_PREFIX$ZSH_THEME_GIT_PROMPT_BRANCH$GIT_BRANCH%{${reset_color}%}"
+	  if [ "$GIT_BEHIND" -ne "0" ]; then
+		  STATUS="$STATUS$ZSH_THEME_GIT_PROMPT_BEHIND$GIT_BEHIND%{${reset_color}%}"
+	  fi
+	  if [ "$GIT_AHEAD" -ne "0" ]; then
+		  STATUS="$STATUS$ZSH_THEME_GIT_PROMPT_AHEAD$GIT_AHEAD%{${reset_color}%}"
+	  fi
+	  STATUS="$STATUS$ZSH_THEME_GIT_PROMPT_SEPARATOR"
+	  if [ "$GIT_STAGED" -ne "0" ]; then
+		  STATUS="$STATUS$ZSH_THEME_GIT_PROMPT_STAGED$GIT_STAGED%{${reset_color}%}"
+	  fi
+	  if [ "$GIT_CONFLICTS" -ne "0" ]; then
+		  STATUS="$STATUS$ZSH_THEME_GIT_PROMPT_CONFLICTS$GIT_CONFLICTS%{${reset_color}%}"
+	  fi
+	  if [ "$GIT_CHANGED" -ne "0" ]; then
+		  STATUS="$STATUS$ZSH_THEME_GIT_PROMPT_CHANGED$GIT_CHANGED%{${reset_color}%}"
+	  fi
+	  if [ "$GIT_UNTRACKED" -ne "0" ]; then
+		  STATUS="$STATUS$ZSH_THEME_GIT_PROMPT_UNTRACKED%{${reset_color}%}"
+	  fi
+	  if [ "$GIT_CHANGED" -eq "0" ] && [ "$GIT_CONFLICTS" -eq "0" ] && [ "$GIT_STAGED" -eq "0" ] && [ "$GIT_UNTRACKED" -eq "0" ]; then
+		  STATUS="$STATUS$ZSH_THEME_GIT_PROMPT_CLEAN"
+	  fi
+	  STATUS="$STATUS%{${reset_color}%}$ZSH_THEME_GIT_PROMPT_SUFFIX"
+	  echo "$STATUS"
+	fi
+}
+
+# Default values for the appearance of the prompt. Configure at will.
+ZSH_THEME_GIT_PROMPT_PREFIX="("
+ZSH_THEME_GIT_PROMPT_SUFFIX=")"
+ZSH_THEME_GIT_PROMPT_SEPARATOR="|"
+ZSH_THEME_GIT_PROMPT_BRANCH="%{$fg_bold[magenta]%}"
+ZSH_THEME_GIT_PROMPT_STAGED="%{$fg[red]%}%{●%G%}"
+ZSH_THEME_GIT_PROMPT_CONFLICTS="%{$fg[red]%}%{✖%G%}"
+ZSH_THEME_GIT_PROMPT_CHANGED="%{$fg[blue]%}%{✚%G%}"
+ZSH_THEME_GIT_PROMPT_BEHIND="%{↓%G%}"
+ZSH_THEME_GIT_PROMPT_AHEAD="%{↑%G%}"
+ZSH_THEME_GIT_PROMPT_UNTRACKED="%{…%G%}"
+ZSH_THEME_GIT_PROMPT_CLEAN="%{$fg_bold[green]%}%{✔%G%}"

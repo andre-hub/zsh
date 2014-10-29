@@ -209,14 +209,14 @@ function ins(){
 }
 
 function packagelist() {
-   Y=`date +%Y-%m-%d`
-   dpkg-query -l  | grep ^ii | awk '{print $2}' > ~/debian-apt-pkglist-$Y.txt
+  Y=`date +%Y-%m-%d`
+	dpkg-query -l  | grep ^ii | awk '{print $2}' > ~/debian-apt-pkglist-$Y.txt
 }
 
 function packagerestore() {
-    Y=`date +%Y-%m-%d`
-    sudo dpkg --set-selections < ~/debian-apt-pkglist-$Y.txt
-    sudo apt-get dselect-upgrade 
+  Y=`date +%Y-%m-%d`
+	sudo dpkg --set-selections < ~/debian-apt-pkglist-%Y.txt
+	sudo apt-get dselect-upgrade
 }
 
 function build1(){
