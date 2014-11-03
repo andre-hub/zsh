@@ -92,6 +92,5 @@ print "$fg[red]Host: $fg[green]$HOST$fg[red], Zeit: $fg[green]`date +%d.%m.%Y' '
 print "$fg[red]Term: $fg[green]$TTY $fg[red], $fg[red]Shell: $fg[green]Zsh $ZSH_VERSION $fg[red] (PID=$$)"
 print "$fg[red]Login: $fg[green]$LOGNAME $fg[red] (UID=$EUID), cars: $fg[green]$COLUMNS x $LINES"
 
-#PROMPT='%n@%m:%~%# '
-#PROMPT='%B%m%~%b$(git_super_status) %# '
-PROMPT='%n@%m: ~%b$(git_super_status) %~%# '
+PROMPT='%n@%m: ~%b%# '
+RPROMPT='$(git_super_status)'
