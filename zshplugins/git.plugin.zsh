@@ -10,7 +10,7 @@ alias gad='git ad'
 compdef _git gpl=git-add
 alias gau='git au'
 compdef _git gpl=git-add
-alias gbr='git br -a'
+alias gbr='git br'
 compdef _git gbr=git-branch
 alias gca='git ca'
 compdef _git gca=git-commit
@@ -20,52 +20,57 @@ alias gco='git co -v'
 compdef _git gc=git-commit
 alias gfe='git fe'
 compdef _git gpl=git-fetch
-alias glg='g lg'
-compdef _git gpl=git-log
-alias gmt='git mergetool'
-compdef _git gpl=git-mergetool
 alias gpl='git pl'
 compdef _git gpl=git-pull
 alias gps='git ps'
 compdef _git gps=git-push
-gdv() { git diff -w "$@" | view - }
 alias grb='git rb'
 compdef _git gpl=git-rebase
-alias grc='git rebase --continue'
+alias grc='git rb --continue'
+compdef _git grc=git-rebase
+
 alias gst='git st'
 compdef _git gst=git-status
+alias gss='git status -s'
+compdef _git gss=git-status
+gdv() { git diff -w "$@" | view - }
+
+alias glg='g lg'
+compdef _git gpl=git-log
+alias glg='git log --stat --max-count=5'
+compdef _git glg=git-log
+alias glgg='git log --graph --max-count=5'
+compdef _git glgg=git-log
+alias gcount='git shortlog -sn'
+compdef _gcount=git
+
+alias gmt='git mergetool'
+compdef _git gpl=git-mergetool
+alias gmg='git merge'
+compdef _git gmg=git-merge
+
 alias gua='gitg'
 compdef _gitg gitg=gitg
 alias gif='git diff'
 compdef _git gif=git-diff
 alias gfp='git fetch --all --tags --prune'
 compdef _git gfp=git-fetch
-alias gup='git fetch --all && git rebase'
-compdef _git gup=git-fetch
-
-alias gcount='git shortlog -sn'
-compdef gcount=git
+alias gfr='git fetch --all && git rebase'
+compdef _git gfr=git-fetch
 alias gcp='git cherry-pick'
 compdef _git gcp=git-cherry-pick
-alias glg='git log --stat --max-count=5'
-compdef _git glg=git-log
-alias glgg='git log --graph --max-count=5'
-compdef _git glgg=git-log
-alias gss='git status -s'
-compdef _git gss=git-status
-alias ga='git add'
-compdef _git ga=git-add
-alias gm='git merge'
-compdef _git gm=git-merge
 alias grh='git reset HEAD'
+compdef _git grh=git
 alias grhh='git reset HEAD --hard'
+compdef _git grhh=git
 
 # Git and svn mix
 alias git-svn-dcommit-push='git svn dcommit && git push github master:svntrunk'
 compdef git-svn-dcommit-push=git
-
 alias gsr='git svn rebase'
+compdef _git gsr=git-svn
 alias gsd='git svn dcommit'
+compdef _git gsd=git-svn
 
 # these aliases take advantage of the previous function
 alias ggpull='git pull origin $(current_branch)'
@@ -74,8 +79,6 @@ alias ggpush='git push origin $(current_branch)'
 compdef ggpush=git
 alias ggpnp='git pull origin $(current_branch) && git push origin $(current_branch)'
 compdef ggpnp=git
-
-
 
 export __GIT_PROMPT_DIR=${0:A:h}
 export GIT_PROMPT_EXECUTABLE=${GIT_PROMPT_USE_PYTHON:-"python"}
@@ -87,7 +90,6 @@ function current_branch() {
   ref=$(git symbolic-ref HEAD 2> /dev/null) || return
   echo ${ref#refs/heads/}
 }
-
 
 ## Function definitions
 function preexec_update_git_vars() {
@@ -130,7 +132,6 @@ function update_current_git_vars() {
 	GIT_UNTRACKED=$__CURRENT_GIT_STATUS[7]
 }
 
-
 git_super_status() {
 	precmd_update_git_vars
     if [ -n "$__CURRENT_GIT_STATUS" ]; then
@@ -167,10 +168,10 @@ ZSH_THEME_GIT_PROMPT_PREFIX="("
 ZSH_THEME_GIT_PROMPT_SUFFIX=")"
 ZSH_THEME_GIT_PROMPT_SEPARATOR="|"
 ZSH_THEME_GIT_PROMPT_BRANCH="%{$fg_bold[magenta]%}"
-ZSH_THEME_GIT_PROMPT_STAGED="%{$fg[red]%}%{●%G%}"
-ZSH_THEME_GIT_PROMPT_CONFLICTS="%{$fg[red]%}%{✖%G%}"
-ZSH_THEME_GIT_PROMPT_CHANGED="%{$fg[blue]%}%{✚%G%}"
-ZSH_THEME_GIT_PROMPT_BEHIND="%{↓%G%}"
-ZSH_THEME_GIT_PROMPT_AHEAD="%{↑%G%}"
-ZSH_THEME_GIT_PROMPT_UNTRACKED="%{…%G%}"
-ZSH_THEME_GIT_PROMPT_CLEAN="%{$fg_bold[green]%}%{✔%G%}"
+ZSH_THEME_GIT_PROMPT_STAGED="%{$fg[red]%}%{ ● %G%}"
+ZSH_THEME_GIT_PROMPT_CONFLICTS="%{$fg[red]%}%{ ✖ %G%}"
+ZSH_THEME_GIT_PROMPT_CHANGED="%{$fg[blue]%}%{ ✚ %G%}"
+ZSH_THEME_GIT_PROMPT_BEHIND="%{ ↓ %G%}"
+ZSH_THEME_GIT_PROMPT_AHEAD="%{ ↑ %G%}"
+ZSH_THEME_GIT_PROMPT_UNTRACKED="%{ … %G%}"
+ZSH_THEME_GIT_PROMPT_CLEAN="%{$fg_bold[green]%}%{ ✔ %G%}"

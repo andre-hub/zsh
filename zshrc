@@ -59,7 +59,7 @@ done
 if [ -f ~/.zshsecinclude ]; then
     source ~/.zshsecinclude
 else
-        print "Note: ~/.zshsecinclude is not available."
+    print "Note: ~/.zshsecinclude is not available."
 fi
 
 # include all libs
@@ -69,7 +69,7 @@ done
 
 ###########          EXPORT          ###########
 export COLORTERM="yes"
-export EDITOR="vim"  # i like vim, sublinetext3,ee
+export EDITOR="vim"  # i like vim, sublinetext3, ee
 
 if [ -f ~/.zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
         source ~/.zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
@@ -81,10 +81,7 @@ fi
 if [ -z "$TMUX" ] && [ $TERM != "screen" ]; then
    tmux attach -d
    [ $? -eq 0 ] && exit
-   echo "WARNING: tmux exited with an error!" >&2
 fi
-
-alias browse='thunar'
 
 ###########   Selfmade Login Intro   ###########
 uptimestart=`uptime | colrm 1 13 | colrm 6`
@@ -92,5 +89,5 @@ print "$fg[red]Host: $fg[green]$HOST$fg[red], Zeit: $fg[green]`date +%d.%m.%Y' '
 print "$fg[red]Term: $fg[green]$TTY $fg[red], $fg[red]Shell: $fg[green]Zsh $ZSH_VERSION $fg[red] (PID=$$)"
 print "$fg[red]Login: $fg[green]$LOGNAME $fg[red] (UID=$EUID), cars: $fg[green]$COLUMNS x $LINES"
 
-PROMPT='%n@%m: ~%b%# '
+PROMPT='%n@%m:%~%#'
 RPROMPT='$(git_super_status)'
