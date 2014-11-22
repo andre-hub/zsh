@@ -35,9 +35,9 @@ alias gss='git status -s'
 compdef _git gss=git-status
 gdv() { git diff -w "$@" | view - }
 
-alias glg='g lg'
+alias glg='git lg'
 compdef _git gpl=git-log
-alias glg='git log --stat --max-count=5'
+alias glgs='git log --stat --max-count=5'
 compdef _git glg=git-log
 alias glgg='git log --graph --max-count=5'
 compdef _git glgg=git-log
@@ -159,7 +159,7 @@ git_super_status() {
 		  STATUS="$STATUS$ZSH_THEME_GIT_PROMPT_CLEAN"
 	  fi
 	  STATUS="$STATUS%{${reset_color}%}$ZSH_THEME_GIT_PROMPT_SUFFIX"
-	  echo "$STATUS"
+	  echo "$STATUS "
 	fi
 }
 
@@ -168,10 +168,10 @@ ZSH_THEME_GIT_PROMPT_PREFIX="("
 ZSH_THEME_GIT_PROMPT_SUFFIX=")"
 ZSH_THEME_GIT_PROMPT_SEPARATOR="|"
 ZSH_THEME_GIT_PROMPT_BRANCH="%{$fg_bold[magenta]%}"
-ZSH_THEME_GIT_PROMPT_STAGED="%{$fg[red]%}%{ ● %G%}"
-ZSH_THEME_GIT_PROMPT_CONFLICTS="%{$fg[red]%}%{ ✖ %G%}"
-ZSH_THEME_GIT_PROMPT_CHANGED="%{$fg[blue]%}%{ ✚ %G%}"
-ZSH_THEME_GIT_PROMPT_BEHIND="%{ ↓ %G%}"
-ZSH_THEME_GIT_PROMPT_AHEAD="%{ ↑ %G%}"
-ZSH_THEME_GIT_PROMPT_UNTRACKED="%{ … %G%}"
-ZSH_THEME_GIT_PROMPT_CLEAN="%{$fg_bold[green]%}%{ ✔ %G%}"
+ZSH_THEME_GIT_PROMPT_STAGED="%{$fg[red]%}%{●%G%}"
+ZSH_THEME_GIT_PROMPT_CONFLICTS="%{$fg[red]%}%{✖%G%}"
+ZSH_THEME_GIT_PROMPT_CHANGED="%{$fg[blue]%}%{✚%G%}"
+ZSH_THEME_GIT_PROMPT_BEHIND="%{↓%G%}"
+ZSH_THEME_GIT_PROMPT_AHEAD="%{↑%G%}"
+ZSH_THEME_GIT_PROMPT_UNTRACKED="%{…%G%}"
+ZSH_THEME_GIT_PROMPT_CLEAN="%{$fg_bold[green]%}%{✔%G%}"

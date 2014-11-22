@@ -1,10 +1,8 @@
 ###############################################
-###########           ZSH           ###########
-###############################################
 
 ###########      Start/Loader       ###########
 #plugins=(debian github ssh-agent gnu-utils gpg-agent vi-mode git-flow mercurial git package)
-plugins=(debian ssh-agent ssh-agent git)
+plugins=(debian xfce ssh-agent ssh-agent git)
 zshlib="~/.zshlib"
 
 # If not running interactively, don't do anything
@@ -56,12 +54,6 @@ for pluginfiles ($plugins); do
     source ~/.zshplugins/$pluginfiles.plugin.zsh
 done
 
-if [ -f ~/.zshsecinclude ]; then
-    source ~/.zshsecinclude
-else
-    print "Note: ~/.zshsecinclude is not available."
-fi
-
 # include all libs
 for config_file (~/.zshlib/*.zsh); do
     source $config_file
@@ -77,6 +69,13 @@ else
         print "Note: ~/.zsh-syntax-highlighting/ is not available."
 fi
 
+###########       Load include       ###########
+if [ -f ~/.zshsecinclude ]; then
+    source ~/.zshsecinclude
+else
+    print "Note: ~/.zshsecinclude is not available."
+fi
+
 ###########          TMUX            ###########
 if [ -z "$TMUX" ] && [ $TERM != "screen" ]; then
    tmux attach -d
@@ -89,5 +88,5 @@ print "$fg[red]Host: $fg[green]$HOST$fg[red], Zeit: $fg[green]`date +%d.%m.%Y' '
 print "$fg[red]Term: $fg[green]$TTY $fg[red], $fg[red]Shell: $fg[green]Zsh $ZSH_VERSION $fg[red] (PID=$$)"
 print "$fg[red]Login: $fg[green]$LOGNAME $fg[red] (UID=$EUID), cars: $fg[green]$COLUMNS x $LINES"
 
-PROMPT='%n@%m:%~%#'
+PROMPT='%n@%m:%~%  # '
 RPROMPT='$(git_super_status)'
