@@ -2,7 +2,7 @@
 
 ###########      Start/Loader       ###########
 #plugins=(debian github ssh-agent gnu-utils gpg-agent vi-mode git-flow mercurial git package)
-plugins=(debian xfce git)
+plugins=(debian xfce git git-alias battery)
 zshlib="~/.zshlib"
 
 # If not running interactively, don't do anything
