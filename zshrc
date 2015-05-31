@@ -1,8 +1,8 @@
 ###############################################
 
 ###########      Start/Loader       ###########
-#plugins=(debian github ssh-agent gnu-utils gpg-agent vi-mode git-flow mercurial git package)
-plugins=(debian xfce git)
+#plugins=(archlinux debian mercurial vi-mode battery github gnu-utils ssh-agent xfce cygwin git gpg-agent svn)
+plugins=(debian xfce ssh-agent git github git-alias)
 zshlib="~/.zshlib"
 
 # If not running interactively, don't do anything
@@ -88,5 +88,5 @@ print "$fg[red]Host: $fg[green]$HOST$fg[red], Zeit: $fg[green]`date +%d.%m.%Y' '
 print "$fg[red]Term: $fg[green]$TTY $fg[red], $fg[red]Shell: $fg[green]Zsh $ZSH_VERSION $fg[red] (PID=$$)"
 print "$fg[red]Login: $fg[green]$LOGNAME $fg[red] (UID=$EUID), cars: $fg[green]$COLUMNS x $LINES"
 
-PROMPT='%n@%m:%~%  # '
-RPROMPT='$(git_super_status)'
+PROMPT='%n@%m:%3~% # '
+RPROMPT='$(git_super_status)%{$reset_color%}'
