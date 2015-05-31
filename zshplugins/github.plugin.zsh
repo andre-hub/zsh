@@ -32,24 +32,20 @@ if [ "$commands[(I)hub]" ] && [ "$commands[(I)ruby]" ]; then
 fi
 
 # Functions #################################################################
-
-# https://github.com/dbb 
-
-
 # empty_gh [NAME_OF_REPO]
 #
 # Use this when creating a new repo from scratch.
 empty_gh() { # [NAME_OF_REPO]
     repo=$1
-    ghuser=$(  git config github.user )
-
+    url=githubUrl $repo
     mkdir "$repo"
     cd "$repo"
-    git init
+ 
+    gitNewRepository
     touch README
     git add README
     git commit -m 'Initial commit.'
-    git remote add origin git@github.com:${ghuser}/${repo}.git
+    git remote add origin $url
     git push -u origin master
 }
 
@@ -59,14 +55,14 @@ empty_gh() { # [NAME_OF_REPO]
 # This function will add all non-hidden files to git.
 new_gh() { # [DIRECTORY]
     cd "$1"
-    ghuser=$( git config github.user )
-
-    git init
-    # add all non-dot files
-    print '.*'"\n"'*~' >> .gitignore
-    git add ^.*
+    url=`githubUrl $1`
+ 
+    gitNewRepository
+    git add *
     git commit -m 'Initial commit.'
-    git remote add origin git@github.com:${ghuser}/${repo}.git
+
+    githubApiAdd $1
+    git remote add origin $url
     git push -u origin master
 }
 
@@ -76,12 +72,47 @@ new_gh() { # [DIRECTORY]
 # to your GitHub.
 exist_gh() { # [DIRECTORY]
     cd "$1"
-    name=$( git config user.name )
-    ghuser=$( git config github.user )
-    repo=$1
-
-    git remote add origin git@github.com:${ghuser}/${repo}.git
+    url=`githubUrl $1`
+    
+    githubApiAdd $1
+    git remote add origin $url
     git push -u origin master
+}
+
+# gitNewRepository 
+#
+# create a new git repo without filemode
+gitNewRepository() {
+    git init    
+    git config core.filemode false
+}
+
+# githubUrl [repositoryName]
+#
+# get your github url for a repo
+githubUrl() {
+    repo=$1
+    ghuser="$(  git config github.user )"
+    url="https://github.com/${ghuser}/$repo.git"
+    echo $url
+}
+
+# addIgnoreFile
+#
+# create a new gitignore file
+addIgnoreFile() {
+    # add all non-dot files
+    print '.*'"\n"'*~' > .gitignore
+}
+
+
+# githubApiAdd [repositoryName]
+#
+# create a new repository on github
+githubApiAdd() {
+    ghuser="$(  git config github.user )"
+    data='{ "name": "'${1}'", "private": false }'
+    curl -u ${ghuser} --data "${data}" https://api.github.com/user/repos 
 }
 
 # git.io "GitHub URL"
