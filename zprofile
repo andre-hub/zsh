@@ -1,6 +1,8 @@
 /usr/bin/keychain $HOME/.ssh/id_rsa
 source $HOME/.keychain/$HOST-sh
 
+export TMPDIR=/tmp
+
 export GOPATH=$HOME/workspace/go
 export PATH=$PATH:$GOPATH/bin
 #export GOROOT=$HOME/go

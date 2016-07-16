@@ -4,151 +4,99 @@
    echo "# pack() & depack()"
    echo "# zshbackup()"
    echo "# homeclean()"
-   echo "# backup() & srv-backup()"
    echo "# packagelist() & packageinstall()"
    echo "# apt-date() & ins()"
    echo "# dl()"
    echo "# info: sudo sysctl vm.swappiness=0"
    }
 
-
-function openurl {
-  URL=$1
-
-  CNTFF=`findBrowser "firefox"`
-  CNTCH=`findBrowser "chromium"`
-
-  echo "$*" > $HOME/logurls
-
-  if [ $CNTFF -ge 1 ] 
-  then
-      /usr/bin/firefox "$URL"
-  elif [ $CNTCH -ge 1 ] 
-  then
-      /usr/bin/chromium "$URL"
-  else
-      echo "No running browser instance"
-  fi
-}
-
-function findBrowser {
+function findProcess {
     processName=$1
-    ps ax | grep "$processName" | grep -v grep | wc -l
-}
+    ps ax | grep "$processName" | grep -v grep
+  }
 
 # Usage: simple-extract <file>
 # Description: extracts archived files (maybe)
   function depack() {
-	if [[ -f "$1" ]]; then
-		case "$1" in
-			*.tar.lrz)
-				b=$(basename "$1" .tar.lrz)
-				lrztar -d "$1" && [[ -d "$b" ]] && cd "$b" ;;
-			*.lrz)
-				b=$(basename "$1" .lrz)
-				lrunzip "$1" && [[ -d "$b" ]] && cd "$b" ;;
-			*.tar.bz2)
-				b=$(basename "$1" .tar.bz2)
-				tar xjf "$1" && [[ -d "$b" ]] && cd "$b" ;;
-			*.bz2)
-				b=$(basename "$1" .bz2)
-				bunzip2 "$1" && [[ -d "$b" ]] && cd "$b" ;;
-			*.tar.gz)
-				b=$(basename "$1" .tar.gz)
-				tar xzf "$1" && [[ -d "$b" ]] && cd "$b" ;;
-			*.gz)
-				b=$(basename "$1" .gz)
-				gunzip "$1" && [[ -d "$b" ]] && cd "$b" ;;
-			*.tar.xz)
-				b=$(basename "$1" .tar.xz)
-				tar Jxf "$1" && [[ -d "$b" ]] && cd "$b" ;;
-			*.xz)
-				b=$(basename "$1" .gz)
-				xz -d "$1" && [[ -d "$b" ]] && cd "$b" ;;
-			*.rar)
-				b=$(basename "$1" .rar)
-				unrar e "$1" && [[ -d "$b" ]] && cd "$b" ;;
-			*.tar)
-				b=$(basename "$1" .tar)
-				tar xf "$1" && [[ -d "$b" ]] && cd "$b" ;;
-			*.tbz2)
-				b=$(basename "$1" .tbz2)
-				tar xjf "$1" && [[ -d "$b" ]] && cd "$b" ;;
-			*.tgz)
-				b=$(basename "$1" .tgz)
-				tar xzf "$1" && [[ -d "$b" ]] && cd "$b" ;;
-			*.zip)
-				b=$(basename "$1" .zip)
-				unzip "$1" && [[ -d "$b" ]] && cd "$b" ;;
-			*.Z)
-				b=$(basename "$1" .Z)
-				uncompress "$1" && [[ -d "$b" ]] && cd "$b" ;;
-			*.7z)
-				b=$(basename "$1" .7z)
-				7z x "$1" && [[ -d "$b" ]] && cd "$b" ;;
-			*) echo "don't know how to extract '$1'..." && return 1;;
-		esac
-		return 0
-	else
-		echo "'$1' is not a valid file!"
-		return 1
-	fi
+  if [[ -f "$1" ]]; then
+    case "$1" in
+      *.tar.lrz)
+        b=$(basename "$1" .tar.lrz)
+        lrztar -d "$1" && [[ -d "$b" ]] && cd "$b" ;;
+      *.lrz)
+        b=$(basename "$1" .lrz)
+        lrunzip "$1" && [[ -d "$b" ]] && cd "$b" ;;
+      *.tar.bz2)
+        b=$(basename "$1" .tar.bz2)
+        tar xjf "$1" && [[ -d "$b" ]] && cd "$b" ;;
+      *.bz2)
+        b=$(basename "$1" .bz2)
+        bunzip2 "$1" && [[ -d "$b" ]] && cd "$b" ;;
+      *.tar.gz)
+        b=$(basename "$1" .tar.gz)
+        tar xzf "$1" && [[ -d "$b" ]] && cd "$b" ;;
+      *.gz)
+        b=$(basename "$1" .gz)
+        gunzip "$1" && [[ -d "$b" ]] && cd "$b" ;;
+      *.tar.xz)
+        b=$(basename "$1" .tar.xz)
+        tar Jxf "$1" && [[ -d "$b" ]] && cd "$b" ;;
+      *.xz)
+        b=$(basename "$1" .gz)
+        xz -d "$1" && [[ -d "$b" ]] && cd "$b" ;;
+      *.rar)
+        b=$(basename "$1" .rar)
+        unrar e "$1" && [[ -d "$b" ]] && cd "$b" ;;
+      *.tar)
+        b=$(basename "$1" .tar)
+        tar xf "$1" && [[ -d "$b" ]] && cd "$b" ;;
+      *.tbz2)
+        b=$(basename "$1" .tbz2)
+        tar xjf "$1" && [[ -d "$b" ]] && cd "$b" ;;
+      *.tgz)
+        b=$(basename "$1" .tgz)
+        tar xzf "$1" && [[ -d "$b" ]] && cd "$b" ;;
+      *.zip)
+        b=$(basename "$1" .zip)
+        unzip "$1" && [[ -d "$b" ]] && cd "$b" ;;
+      *.Z)
+        b=$(basename "$1" .Z)
+        uncompress "$1" && [[ -d "$b" ]] && cd "$b" ;;
+      *.7z)
+        b=$(basename "$1" .7z)
+        7z x "$1" && [[ -d "$b" ]] && cd "$b" ;;
+      *.xz)
+        b=$(basename "$1" .xz)
+        xz -k -v -d "$1" && [[ -d "$b" ]] && cd "$b" ;; 
+      *) echo "don't know how to extract '$1'..." && return 1;;
+    esac
+    return 0
+  else
+    echo "'$1' is not a valid file!"
+    return 1
+  fi
   }
 
 # Usage: smartcompress <file> (<type>)
 # Description: compresses files or a directory.  Defaults to tar.gz
 function pack() {
-	if [ $2 ]; then
-	  case $2 in
-	    tgz | tar.gz)   tar -zcvf $1.$2 $1 ;;
-	    tbz2 | tar.bz2) tar -jcvf $1.$2 $1 ;;
-	    tar.Z)          tar -Zcvf $1.$2 $1 ;;
-	    tar)            tar -cvf $1.$2  $1 ;;
-	    gz | gzip)      gzip           $1 ;;
-	    bz2 | bzip2)    bzip2          $1 ;;
-	    7z |7zip)   7z a $1.$2     $1 ;;
-	    *)
-	    echo "Error: $2 is not a valid compression type"
-	    ;;
-	  esac
-	else
-	  pack $1 tar.gz
-	fi
-}
-
-# gui alternative bleachbit
-function homeclean() {
-	echo "cleaning home dir"
-	echo " - thumbnails"
-	/bin/rm -f ~/.local/share/grisbi/*
-	/bin/rm -f ~/.thumbnails/fail/thunar-vfs/*
-	/bin/rm -f ~/.thumbnails/normal/*
-	echo " - firefox"
-	/bin/rm -f ~/.mozilla/firefox/*/adblockplus/*backup*
-	/bin/rm -f ~/.mozilla/firefox/*/bookmarkbackups/*
-	for f in ~/.mozilla/firefox/*/*.sqlite; do sqlite3 $f 'VACUUM;'; done
-	#echo " - sessions"
-	#/bin/rm -f ~/.cache/sessions/*
-	echo " - chromium"
-	sqlite3 ~/.config/chromium/Safe\ Browsing\ Bloom 'VACUUM;'
-	sqlite3 ~/.config/chromium/Default/Archived\ History 'VACUUM;'
-	sqlite3 ~/.config/chromium/Default/Cookies 'VACUUM;'
-	sqlite3 ~/.config/chromium/Default/Extension\ Cookies 'VACUUM;'
-	sqlite3 ~/.config/chromium/Default/History 'VACUUM;'
-	sqlite3 ~/.config/chromium/Default/Thumbnails 'VACUUM;'
-	sqlite3 ~/.config/chromium/Default/Web\ Data 'VACUUM;'
-	for f in ~/.config/chromium/Default/Local\ Storage/*localstorage; do sqlite3 $f 'VACUUM;'; done
-	for f in ~/.config/chromium/Default/databases/*; do sqlite3 $f 'VACUUM;'; done
-	echo " - penguintv"
-	#/bin/rm -rf ~/.penguintv/media/*
-	for f in ~/.penguintv/*.db; do sqlite3 $f 'VACUUM;'; done
-	#echo " - liferea"
-	#for f in ~/.liferea_*/*.db; do sqlite3 $f 'VACUUM;'; done
-	#echo " - Miro"
-	#sqlite3 ~/.miro/sqlitedb 'VACUUM;'
-	#/bin/rm -rf ~/.miro/*log*
-	echo "create compdump"
-	compdump
+  if [ $2 ]; then
+    case $2 in
+      tgz | tar.gz)   tar -zcvf $1.$2 $1 ;;
+      tbz2 | tar.bz2) tar -jcvf $1.$2 $1 ;;
+      tar.Z)          tar -Zcvf $1.$2 $1 ;;
+      tar)            tar -cvf $1.$2  $1 ;;
+      gz | gzip)      gzip           $1 ;;
+      bz2 | bzip2)    bzip2          $1 ;;
+      7z |7zip)       7z a $1.$2     $1 ;;
+      xz)             xz -k -v -z $1 ;;
+      *)
+      echo "Error: $2 is not a valid compression type"
+      ;;
+    esac
+  else
+    pack $1 tar.gz
+  fi
 }
 
   # simple backup of all files
@@ -167,70 +115,23 @@ function homeclean() {
     echo "zprofile"
 
     if [ ! -d ~/$BACKUPPATH/zshlib ]; then
-	  mkdir ~/$BACKUPPATH/zshlib
+    mkdir ~/$BACKUPPATH/zshlib
     fi
     cp -R ~/.zshlib/* ~/$BACKUPPATH/zshlib/
     echo "zshlib"
 
     if [ ! -d ~/$BACKUPPATH/zshplugins ]; then
-	  mkdir ~/$BACKUPPATH/zshplugins
+    mkdir ~/$BACKUPPATH/zshplugins
     fi
     cp -R ~/.zshplugins/* ~/$BACKUPPATH/zshplugins/
     echo "zshplugins"
 
     if [ ! -d ~/$BACKUPPATH/zsh-syntax-highlighting ]; then
-	  mkdir ~/$BACKUPPATH/zsh-syntax-highlighting
+    mkdir ~/$BACKUPPATH/zsh-syntax-highlighting
     fi
     cp -R ~/.zsh-syntax-highlighting/* ~/$BACKUPPATH/zsh-syntax-highlighting/
     echo "zsh-syntax-highlighting"
     }
-
-# Usage: srv-backup ()
-# Description: backup server data  Defaults /var/www
-  function srv-backup() {
-    Y=`date +%Y-%m`
-    P="~/Data/Backups/srv"
-    srv_www_p="/var/www/"
-    # - - - - -
-    A=`pwd`
-    TP="/tmp/srv-backup"
-    echo "$fg_bold[blue]"
-    mkdir $TP
-    cd $TP
-    7z a "$TP/srv-backup-$Y.7z" $srv_www_p/*
-    mysqldump --user=root --password= --all-databases > srv-mysql-$Y.sql
-    7z a "$TP/srv-backup-$Y.7z" $TP/srv-mysql-$Y.sql
-    tar -cf "$P/srv-backup-$Y.tar" "srv-backup-$Y.7z"
-    cd $A
-    rm -r $TP
-  }
-
-
-# Usage: srv-full-backup ()
-# Description: backup server data  Defaults /var/www
-  function srv-full-backup() {
-    Y=`date +%Y-%m-%d_%H.%M`
-    P="~/Archiv"
-    srv_p="/data/srv/"
-    srv_www_p="www/"
-    srv_mysql_p="mysql/"
-    # - - - - -
-    A=pwd
-    TP="/tmp/srv-backup"
-    echo "$fg_bold[blue]"
-    mkdir $TP
-    cd $srv_p
-    tar -cpf "$TP/srv-mysql-backup-$Y.tar" "$srv_mysql_p"
-    tar -cpf "$TP/srv-www-backup-$Y.tar" "$srv_www_p"
-    7z a "$P/srv-backup-$Y.7z" "$TP/srv-*"
-    cd $A
-    rm -r $TP
-  }
-
-# shutdown pc
-  function off () {
-     sudo poweroff
-  }
 
 # Usage: gpg-add ()
 # Description: backup server data  Defaults /var/www
@@ -244,11 +145,11 @@ function homeclean() {
   }
 
   function rsync-dotfiles() {
-  	if [ $1 ]; then
+    if [ $1 ]; then
        rsync --copy-links ~/.* $1  2> ~/rsync-dotfiles.log
-  	else
-  		echo "target dir is require"
-  	fi
+    else
+      echo "target dir is require"
+    fi
   }
 
  function dl() {
@@ -265,17 +166,6 @@ function homeclean() {
     echo "no url"
   fi
   }
-
-
-# Escape potential tarbombs
-# http://www.commandlinefu.com/commands/view/6824/escape-potential-tarbombs
-etb() {
-  l=$(tar tf $1);
-  if [ $(echo "$l" | wc -l) -eq $(echo "$l" | grep $(echo "$l" | head -n1) | wc -l) ];
-  then tar xf $1;
-  else mkdir ${1%.t(ar.gz||ar.bz2||gz||bz||ar)} && tar xvf $1 -C ${1%.t(ar.gz||ar.bz2||gz||bz||ar)};
-  fi ;
-}
 
 # show newest files
 # http://www.commandlinefu.com/commands/view/9015/find-the-most-recently-changed-files-recursively
@@ -335,12 +225,6 @@ shebang() {
     rehash
 }
 
-# translate via google language tools (more lightweight than leo)
-# http://www.commandlinefu.com/commands/view/5034/
-translate() {
-    wget -qO- "http://ajax.googleapis.com/ajax/services/language/translate?v=1.0&q=$1&langpair=$2|${3:-en}" | sed 's/.*"translatedText":"\([^"]*\)".*}/\1\n/'
-}
-
 
 function gitCleanPull() {
     git stash clear
@@ -363,4 +247,12 @@ function zsh_stats() {
 function take() {
   mkdir -p $1
   cd $1
+}
+
+function pdfmerge() {
+  gs -o ${1/'.pdf'/'-new.pdf'} -sDevice=pdfwrite -dPDFSETTING=/prepress $1 $2 $3
+}
+
+function pdfreconvert() {
+  gs -o ${1/'.pdf'/'-new.pdf'} -sDevice=pdfwrite -dPDFSETTING=/prepress $1
 }
