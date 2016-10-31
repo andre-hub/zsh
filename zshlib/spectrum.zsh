@@ -25,4 +25,3 @@ function spectrum_ls() {
     print -P -- "$code: %F{$code}Test%f"
   done
 }
-
