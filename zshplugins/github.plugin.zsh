@@ -115,6 +115,7 @@ githubApiAdd() {
     curl -u ${ghuser} --data "${data}" https://api.github.com/user/repos 
 }
 
+
 # git.io "GitHub URL"
 #
 # Shorten GitHub url, example:
@@ -122,6 +123,8 @@ githubApiAdd() {
 # source: https://github.com/nvogel/dotzsh
 # documentation: https://github.com/blog/985-git-io-github-url-shortener
 #
-git.io() {curl -i -s http://git.io -F "url=$1" | grep "Location" | cut -f 2 -d " "}
-
+git.io() {
+  emulate -L zsh
+  curl -i -s https://git.io -F "url=$1" | grep "Location" | cut -f 2 -d " "
+}
 # End Functions #############################################################

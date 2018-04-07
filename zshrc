@@ -2,7 +2,7 @@
 
 ###########      Start/Loader       ###########
 #plugins=(debian github ssh-agent gnu-utils gpg-agent vi-mode git-flow mercurial git package)
-plugins=(debian xfce git git-alias github battery fzf-completion fzf-key-bindings)
+plugins=(debian xfce git git-alias github battery colored-man-pages golang tmux fzf-completion fzf-key-bindings)
 zshlib="~/.zshlib"
 
 # If not running interactively, don't do anything
@@ -15,14 +15,6 @@ zshlib="~/.zshlib"
 if [ -z "$debian_chroot" ] && [ -r /etc/debian_chroot ]; then
     debian_chroot=$(cat /etc/debian_chroot)
 fi
-
-# Add all defined plugins to fpath. This must be done
-# before running compinit.
-for plugin ($plugins); do
-  if [ -d $plugin ]; then
-    fpath=($plugin $fpath)
-  fi
-done
 
 # Load and run compinit
 autoload -U compinit
@@ -44,10 +36,17 @@ setopt PROMPT_SUBST
 
 # enable programmable completion features
 if [ -f /etc/zsh_completion ]; then
-    . /etc/zsh_completion
+    . /etc/	
 fi
 
 ###########      load plugins       ###########
+# Add all defined plugins to fpath. This must be done
+# before running compinit.
+for plugin ($plugins); do
+  if [ -d $plugin ]; then
+    fpath=($plugin $fpath)
+  fi
+done
 
 # include all libs
 for config_file (~/.zshlib/*.zsh); do

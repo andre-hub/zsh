@@ -1,37 +1,49 @@
-###########        zstyle          ###########
-zstyle ':completion:*' group-name ''
-zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
-zstyle ':completion:*' list-prompt %SAt %p: Hit TAB for more, or the character to insert%s
-zstyle ':completion:*' menu select=long-list select=0
-zstyle ':completion:*' select-prompt %SScrolling active: current selection at %p%s
-zstyle ':completion:*' verbose true
-zstyle ':completion:*:complete-extended:*' matcher-list 'm:{a-z}={A-Z}' 'r:|[+._-]=*'
-zstyle ':completion:*:complete-substring:*' matcher-list 'm:{a-z}={A-Z} l:|=**'
-zstyle :compinstall filename '~/.zshrc'
-
 # ls colors
-autoload -U colors; colors;
-export LSCOLORS="Gxfxcxdxbxegedabagacad"
-#export LS_COLORS
+autoload -U colors && colors
 
 # Enable ls colors
-if [ "$DISABLE_LS_COLORS" != "true" ]
-then
-  # Find the option for using colors in ls, depending on the version: Linux or BSD
-  ls --color -d . &>/dev/null 2>&1 && alias ls='ls --color=tty' || alias ls='ls -G'
+export LSCOLORS="Gxfxcxdxbxegedabagacad"
+
+# TODO organise this chaotic logic
+
+if [[ "$DISABLE_LS_COLORS" != "true" ]]; then
+  # Find the option for using colors in ls, depending on the version
+  if [[ "$OSTYPE" == netbsd* ]]; then
+    # On NetBSD, test if "gls" (GNU ls) is installed (this one supports colors);
+    # otherwise, leave ls as is, because NetBSD's ls doesn't support -G
+    gls --color -d . &>/dev/null && alias ls='gls --color=tty'
+  elif [[ "$OSTYPE" == openbsd* ]]; then
+    # On OpenBSD, "gls" (ls from GNU coreutils) and "colorls" (ls from base,
+    # with color and multibyte support) are available from ports.  "colorls"
+    # will be installed on purpose and can't be pulled in by installing
+    # coreutils, so prefer it to "gls".
+    gls --color -d . &>/dev/null && alias ls='gls --color=tty'
+    colorls -G -d . &>/dev/null && alias ls='colorls -G'
+  elif [[ "$OSTYPE" == darwin* ]]; then
+    # this is a good alias, it works by default just using $LSCOLORS
+    ls -G . &>/dev/null && alias ls='ls -G'
+
+    # only use coreutils ls if there is a dircolors customization present ($LS_COLORS or .dircolors file)
+    # otherwise, gls will use the default color scheme which is ugly af
+    [[ -n "$LS_COLORS" || -f "$HOME/.dircolors" ]] && gls --color -d . &>/dev/null && alias ls='gls --color=tty'
+  else
+    # For GNU ls, we use the default ls color theme. They can later be overwritten by themes.
+    if [[ -z "$LS_COLORS" ]]; then
+      (( $+commands[dircolors] )) && eval "$(dircolors -b)"
+    fi
+
+    ls --color -d . &>/dev/null && alias ls='ls --color=tty' || { ls -G . &>/dev/null && alias ls='ls -G' }
+
+    # Take advantage of $LS_COLORS for completion as well.
+    zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+  fi
 fi
 
-setopt no_beep
 setopt auto_cd
 setopt multios
-setopt cdablevarS
+setopt prompt_subst
 
-if [[ x$WINDOW != x ]]
-then
-    SCREEN_NO="%B$WINDOW%b "
-else
-    SCREEN_NO=""
-fi
+[[ -n "$WINDOW" ]] && SCREEN_NO="%B$WINDOW%b " || SCREEN_NO=""
 
 # Apply theming defaults
 PS1="%n@%m:%~%# "
@@ -41,8 +53,3 @@ ZSH_THEME_GIT_PROMPT_PREFIX="git:("         # Prefix at the very beginning of th
 ZSH_THEME_GIT_PROMPT_SUFFIX=")"             # At the very end of the prompt
 ZSH_THEME_GIT_PROMPT_DIRTY="*"              # Text to display if the branch is dirty
 ZSH_THEME_GIT_PROMPT_CLEAN=""               # Text to display if the branch is clean
-
-# Setup the prompt with pretty colors
-setopt prompt_subst
-
-RPROMPT='[%?]'

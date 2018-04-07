@@ -18,13 +18,19 @@ compdef _git gps=git-push
 alias grb='git rb'
 compdef _git grb=git-rebase
 alias grbc='git rbc --continue'
-compdef _git grb=git-rebase
+compdef _git grbc=git-rebase
+alias grba='git rebase --abort'
+compdef _git grba=git-rebase
+alias grbi='git rebase -i'
+compdef _git grbi=git-rebase
 alias gcl='git clone'
 compdef git _gcl=git-clone
 alias gst='git st'
 compdef _git gst=git-status
 alias gss='git status -s'
 compdef _git gss=git-status
+alias gra='git remote add'
+compdef _git gra=git-remote
 gdv() { git diff -w "$@" | view - }
 
 alias glg='git lg'
@@ -52,9 +58,9 @@ compdef _git gfr=git-fetch
 alias gcp='git cherry-pick'
 compdef _git gcp=git-cherry-pick
 alias grh='git reset HEAD'
-compdef _git grh=git
+compdef _git grh=git-reset
 alias grhh='git reset HEAD --hard'
-compdef _git grhh=git
+compdef _git grhh=git-reset
 
 # Git and svn mix
 alias git-svn-dcommit-push='git svn dcommit && git push github master:svntrunk'
@@ -71,3 +77,6 @@ alias ggpush='git push origin $(current_branch)'
 compdef ggpush=git
 alias ggpnp='git pull origin $(current_branch) && git push origin $(current_branch)'
 compdef ggpnp=git
+
+alias glum='git pull upstream master'
+compdef glum=git
