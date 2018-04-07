@@ -2,7 +2,7 @@
 
 ###########      Start/Loader       ###########
 #plugins=(debian github ssh-agent gnu-utils gpg-agent vi-mode git-flow mercurial git package)
-plugins=(debian xfce git git-alias github battery)
+plugins=(debian xfce git git-alias github battery fzf-completion fzf-key-bindings)
 zshlib="~/.zshlib"
 
 # If not running interactively, don't do anything
@@ -49,14 +49,14 @@ fi
 
 ###########      load plugins       ###########
 
-# Load all of the plugins that were defined in ~/.zshrc
-for pluginfiles ($plugins); do
-    source ~/.zshplugins/$pluginfiles.plugin.zsh
-done
-
 # include all libs
 for config_file (~/.zshlib/*.zsh); do
     source $config_file
+done
+
+# Load all of the plugins that were defined in ~/.zshrc
+for pluginfiles ($plugins); do
+    source ~/.zshplugins/$pluginfiles.plugin.zsh
 done
 
 ###########          EXPORT          ###########

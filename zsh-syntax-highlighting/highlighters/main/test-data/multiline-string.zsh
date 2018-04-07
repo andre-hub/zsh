@@ -1,6 +1,5 @@
-#!/usr/bin/env zsh
 # -------------------------------------------------------------------------------------------------
-# Copyright (c) 2010-2011 zsh-syntax-highlighting contributors
+# Copyright (c) 2015 zsh-syntax-highlighting contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification, are permitted
@@ -28,9 +27,11 @@
 # vim: ft=zsh sw=2 ts=2 et
 # -------------------------------------------------------------------------------------------------
 
-BUFFER='ls highlighters/main/test-data/path-space-\ .zsh'
+PREBUFFER=$'echo "foo1\n'
+BUFFER='foo2" ./'
 
 expected_region_highlight=(
-  "1 2  $ZSH_HIGHLIGHT_STYLES[command]" # ls
-  "4 48 $ZSH_HIGHLIGHT_STYLES[path]"    # highlighters/main/test-data/path-space-\ .zsh
+  "1 5 default" # 'foo2"'
+  "1 5 double-quoted-argument" # 'foo2"'
+  "7 8 path" # './'
 )
