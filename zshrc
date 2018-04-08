@@ -1,9 +1,11 @@
 ###############################################
 
 ###########      Start/Loader       ###########
-#plugins=(debian github ssh-agent gnu-utils gpg-agent vi-mode git-flow mercurial git package)
+# plugins
+# archlinux battery colored-man-pages cygwin debian fzf-completion fzf-key-bindings 
+# git-alias github git golang go-templates gpg-agent mercurial ssh-agent svn tmux 
+# vi-mode xfce
 plugins=(debian xfce git git-alias github battery colored-man-pages golang tmux fzf-completion fzf-key-bindings)
-zshlib="~/.zshlib"
 
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
@@ -76,9 +78,13 @@ else
 fi
 
 ###########          TMUX            ###########
-if [ -z "$TMUX" ] && [ $TERM != "screen" ]; then
-   tmux attach -d
-   [ $? -eq 0 ] && exit
+if [ -z "$TMUX" ] && [ $TERM != "screen" ] && [ "$SSH_CONNECTION" != "" ]; then
+  WHOAMI=$(whoami)
+  if tmux has-session -t $WHOAMI 2>/dev/null; then
+    tmux -2 attach-session -t $WHOAMI
+  else
+    tmux -2 new-session -s $WHOAMI
+  fi
 fi
 
 ###########   Selfmade Login Intro   ###########
