@@ -279,3 +279,13 @@ function pdfmerge() {
 function pdfreconvert() {
   gs -o ${1/'.pdf'/'-new.pdf'} -sDevice=pdfwrite -dPDFSETTING=/prepress $1
 }
+
+function dotFolderBackup {
+  name=$1
+  mv .$name $name
+  pack $name tar
+  mv $name .$name
+  pack $name.tar xz
+  mv $name.tar.xz $name-`date +%Y-%m-%d_%H-%M`.tar.xz
+  rm $name.tar
+}
