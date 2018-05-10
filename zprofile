@@ -13,3 +13,7 @@ export PATH="/usr/share/yarn/bin/node-gyp-bin:$PATH"
 if [ "$(tty)" = "/dev/tty2" ]; then 
 	startxfce4
 fi
+export PATH="$HOME/.cargo/bin:$PATH"
+export TODO_DIR="$HOME/Nextcloud/Documents"
+export TODO_FILE="$TODO_DIR/todo.txt"
+export DONE_FILE="$TODO_DIR/done.txt"
