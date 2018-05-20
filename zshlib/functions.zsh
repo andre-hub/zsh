@@ -233,7 +233,7 @@ function omz_urldecode {
      else
         cd ~/Downloads/Temp/
      fi
-     aria2c $1 $3
+     aria2c -c -j 2 -x 10 $1
      cd $temp
   else
     echo "no url"

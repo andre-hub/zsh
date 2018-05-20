@@ -15,6 +15,8 @@ alias ht="htop"
 alias rsync="rsync --human-readable  --progress --recursive -t"
 alias insecssh='ssh -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null"'
 alias tree="find . -print | sed -e 's;[^/]*/;|____;g;s;____|; |;g'"
+alias gitgc="gitg -c"
+alias gitga="gitg -a"
 
 # start editor by extension
 alias -s txt='vim'
