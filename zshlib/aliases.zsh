@@ -17,6 +17,7 @@ alias insecssh='ssh -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/nu
 alias tree="find . -print | sed -e 's;[^/]*/;|____;g;s;____|; |;g'"
 alias gitgc="gitg -c"
 alias gitga="gitg -a"
+alias wlanpower="sudo iwconfig wlp1s0 power"
 
 # start editor by extension
 alias -s txt='vim'
