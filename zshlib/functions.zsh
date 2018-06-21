@@ -273,11 +273,11 @@ function take() {
 }
 
 function pdfmerge() {
-  gs -o ${1/'.pdf'/'-new.pdf'} -sDevice=pdfwrite -dPDFSETTING=/prepress $1 $2 $3
+  gs -dBATCH -dNOPAUSE -o ${1/'.pdf'/'-new.pdf'} -sDevice=pdfwrite -dPDFSETTING=/prepress $1 $2 $3
 }
 
 function pdfreconvert() {
-  gs -o ${1/'.pdf'/'-new.pdf'} -sDevice=pdfwrite -dPDFSETTING=/prepress $1
+  gs -r600 -o ${1/'.pdf'/'-new.pdf'} -sDevice=pdfwrite -dPDFSETTING=/prepress $1
 }
 
 function dotFolderBackup {
