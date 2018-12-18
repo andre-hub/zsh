@@ -280,6 +280,16 @@ function pdfreconvert() {
   gs -r600 -o ${1/'.pdf'/'-new.pdf'} -sDevice=pdfwrite -dPDFSETTING=/prepress $1
 }
 
+function pdfresize() {
+	filename=$1
+	outFilename=$2
+	dpi=$3
+	gs -q -dNOPAUSE -dBATCH -dSAFER -dPDFA=2 -dPDFACompatibilityPolicy=1 -dSimulateOverprint=true -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 \
+	 -dPDFSETTINGS=/ebook -dEmbedAllFonts=true -dSubsetFonts=true -dAutoRotatePages=/None -dColorImageDownsampleType=/Bicubic \
+	 -dColorImageResolution=$dpi -dGrayImageDownsampleType=/Bicubic -dGrayImageResolution=$dpi -dMonoImageDownsampleType=/Bicubic \
+	 -dMonoImageResolution=$dpi -sOutputFile=$outFilename $filename
+}
+
 function dotFolderBackup {
   name=$1
   mv .$name $name
