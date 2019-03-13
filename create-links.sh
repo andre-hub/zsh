@@ -1,10 +1,22 @@
 #!/bin/sh
 #
-Y=`date +%Y-%m-%d`
+baseDirectory="$HOME/workspace/zsh.git"
 
-ln -s ~/workspace/zsh.git/zshlib .zshlib
-ln -s ~/workspace/zsh.git/zshplugins .zshplugins
-ln -s ~/workspace/zsh.git/zsh-syntax-highlighting .zsh-syntax-highlighting
-ln -s ~/workspace/zsh.git/zlogout .zlogout
-ln -s ~/workspace/zsh.git/zprofile .zprofile
-ln -s ~/workspace/zsh.git/zshrc .zshrc
+createLinkFile () {
+	echo "target: $1"
+	rm $2 
+	ln -s $1 $2
+}
+
+createLinkDirectory () {
+	echo "target: $1"
+	rm -rf $2 
+	ln -s $1 $2
+}
+
+createLinkDirectory $baseDirectory/zshlib $HOME/.zshlib
+createLinkDirectory $baseDirectory/zshplugins $HOME/.zshplugins
+createLinkDirectory $baseDirectory/zsh-syntax-highlighting $HOME/.zsh-syntax-highlighting
+createLinkFile $baseDirectory/zlogout $HOME/.zlogout
+createLinkFile $baseDirectory/zprofile $HOME/.zprofile
+createLinkFile $baseDirectory/zshrc $HOME/.zshrc
