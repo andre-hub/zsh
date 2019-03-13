@@ -197,7 +197,7 @@ function packageinstall() {
 }
 
 function apt-date(){
-    if [ $1 ]; then
+	if [[ -e $( which aptitude ) ]]; then
         sudo aptitude update && sudo aptitude safe-upgrade && sudo aptitude autoclean && sudo aptitude clean && sudo aptitude autoremove
     else
         sudo apt-get update && sudo apt-get -y upgrade && sudo apt-get autoremove && sudo apt-get autoclean
@@ -209,13 +209,12 @@ function ins(){
 }
 
 function packagelist() {
-  Y=`date +%Y-%m-%d`
+  	Y=`date +%Y-%m-%d`
 	dpkg-query -l  | grep ^ii | awk '{print $2}' > ~/debian-apt-pkglist-$Y.txt
 }
 
 function packagerestore() {
-  Y=`date +%Y-%m-%d`
-	sudo dpkg --set-selections < ~/debian-apt-pkglist-%Y.txt
+  	sudo dpkg --set-selections < $1
 	sudo apt-get dselect-upgrade
 }
 

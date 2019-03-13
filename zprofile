@@ -20,10 +20,10 @@ export TODO_FILE="$TODO_DIR/todo.txt"
 export DONE_FILE="$TODO_DIR/done.txt"
 
 # Proxy
-export http_proxy=http://rpi2:8888
+#export http_proxy=http://rpi2:8888
 # export https_proxy=http://rpi2:8888
-export ftp_proxy=http://rpi2:8888
-export HTTP_PROXY=$http_proxy
+#export ftp_proxy=http://rpi2:8888
+#export HTTP_PROXY=$http_proxy
 # export HTTPS_PROXY=$https_proxy
-export FTP_PROXY=$ftp_proxy
-export no_proxy=example.com,192.168.1.1,192.168.178.1,local
+#export FTP_PROXY=$ftp_proxy
+#export no_proxy=example.com,192.168.1.1,192.168.178.1,local
