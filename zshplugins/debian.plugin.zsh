@@ -1,4 +1,4 @@
-# Authors:
+	# Authors:
 # https://github.com/AlexBio
 # https://github.com/dbb
 #
@@ -81,11 +81,6 @@ else
     alias ag='su -lc "'"$apt_pref"' safe-upgrade" root'
     ai() {
         cmd="su -lc 'aptitude -P install $@' root"
-        print "$cmd"
-        eval "$cmd"
-    }
-    ap() {
-        cmd="su -lc '$apt_pref -P purge $@' root"
         print "$cmd"
         eval "$cmd"
     }
@@ -198,7 +193,7 @@ function packageinstall() {
 
 function apt-date(){
 	if [[ -e $( which aptitude ) ]]; then
-        sudo aptitude update && sudo aptitude safe-upgrade && sudo aptitude autoclean && sudo aptitude clean && sudo aptitude autoremove
+        sudo aptitude update && sudo aptitude safe-upgrade && sudo aptitude autoclean && sudo aptitude clean
     else
         sudo apt-get update && sudo apt-get -y upgrade && sudo apt-get autoremove && sudo apt-get autoclean
     fi
