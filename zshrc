@@ -21,6 +21,7 @@ fi
 # Load and run compinit
 autoload -U compinit
 autoload -U add-zsh-hook
+autoload -Uz vcs_info
 compinit -i
 
 ###########         setopt          ###########
@@ -40,6 +41,8 @@ setopt PROMPT_SUBST
 if [ -f /etc/zsh_completion ]; then
     . /etc/	
 fi
+
+zstyle ':vcs_info:*' enable git
 
 ###########      load plugins       ###########
 # Add all defined plugins to fpath. This must be done
@@ -94,4 +97,16 @@ print "$fg[red]Term: $fg[green]$TTY $fg[red], $fg[red]Shell: $fg[green]Zsh $ZSH_
 print "$fg[red]Login: $fg[green]$LOGNAME $fg[red] (UID=$EUID), cars: $fg[green]$COLUMNS x $LINES"
 
 PROMPT='%n@%m:%~%  # '
-RPROMPT='$(git_super_status)'
+() {
+    local formats="${PRCH[branch]} %b%c%u"
+    local actionformats="${formats}%{${fg[default]}%} ${PRCH[sep]} %{${fg[green]}%}%a"
+    zstyle ':vcs_info:*:*' formats           $formats
+    zstyle ':vcs_info:*:*' actionformats     $actionformats
+    zstyle ':vcs_info:*:*' stagedstr         "%{${fg[green]}%}${PRCH[circle]}"
+    zstyle ':vcs_info:*:*' unstagedstr       "%{${fg[yellow]}%}${PRCH[circle]}"
+    zstyle ':vcs_info:*:*' check-for-changes true
+}
+
+add-zsh-hook precmd vcs_info
+
+#RPROMPT='${vcs_info_msg_0_}'
