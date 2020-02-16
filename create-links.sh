@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-baseDirectory="$HOME/workspace/zsh.git"
+baseDirectory="$HOME/workspace/it/zsh.git"
 
 createLinkFile () {
 	echo "target: $1"
