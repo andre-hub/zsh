@@ -299,3 +299,13 @@ function dotFolderBackup {
   mv $name.tar.xz $name-`date +%Y-%m-%d_%H-%M`.tar.xz
   rm $name.tar
 }
+
+(( $+functions[rsync-backup] )) || function rsync-backup() {
+  SyncNameDir=$1
+  SyncTargetDir=$2
+  rsync ${SyncNameDir} ${SyncTargetDir}
+  cd ${SyncTargetDir}
+  mv ${SyncNameDir} ${SyncNameDir}-`date +%Y-%m-%d`
+  thunar ${SyncTargetDir}
+  cd ~
+}

@@ -1,11 +1,14 @@
 ###############################################
 
 ###########      Start/Loader       ###########
+# Helper; will be unset later.
+_exists() { (( $+commands[$1] )) }
+
 # plugins
 # archlinux battery colored-man-pages cygwin debian fzf-completion fzf-key-bindings 
 # git-alias github git golang go-templates gpg-agent mercurial ssh-agent svn tmux 
 # vi-mode xfce
-plugins=(debian xfce git git-alias github battery colored-man-pages golang tmux fzf-completion fzf-key-bindings)
+plugins=(debian xfce git git-alias github battery colored-man-pages golang tmux fzf-completion fzf-key-bindings sql)
 
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
@@ -74,6 +77,41 @@ else
 fi
 
 ###########       Load include       ###########
+typeset -U path  # No duplicates
+path=()
+
+_prepath() {
+    for dir in "$@"; do
+        dir=${dir:A}
+        [[ ! -d "$dir" ]] && return
+        path=("$dir" $path[@])
+    done
+}
+_postpath() {
+    for dir in "$@"; do
+        dir=${dir:A}
+        [[ ! -d "$dir" ]] && return
+        path=($path[@] "$dir")
+    done
+}
+
+_prepath /bin /sbin /usr/bin /usr/sbin  /usr/games
+_prepath /usr/pkg/bin   /usr/pkg/sbin   # NetBSD
+_prepath /usr/X11R6/bin /usr/X11R6/sbin # OpenBSD
+_prepath /usr/local/bin /usr/local/sbin
+
+_prepath "$HOME/workspace/go/bin"      # Go
+_prepath "$HOME/.local/bin"            # My local stuff.
+if [[ -d "$HOME/.gem/ruby" ]]; then    # Ruby
+    for d in "$HOME/.gem/ruby/"*; do
+        _postpath "$d/bin";
+    done
+fi
+
+unfunction _prepath
+unfunction _postpath
+
+
 if [ -f ~/.zshsecinclude ]; then
     source ~/.zshsecinclude
 else
@@ -89,6 +127,16 @@ if [ -z "$TMUX" ] && [ $TERM != "screen" ] && [ "$SSH_CONNECTION" != "" ]; then
     tmux -2 new-session -s $WHOAMI
   fi
 fi
+
+###########   Directory shortcuts   ###########
+hash -d wit=$HOME/workspace/it
+hash -d dt=$HOME/Downloads/Temp
+
+###########   aliases   ###########
+_exists htop       && alias top='htop'
+
+alias Y='echo $(date +%Y-%m-%d)'
+alias YY=`date +%Y-%m-%d_%H-%M-%S`
 
 ###########   Selfmade Login Intro   ###########
 uptimestart=`uptime | colrm 1 13 | colrm 6`
@@ -110,3 +158,6 @@ PROMPT='%n@%m:%~%  # '
 add-zsh-hook precmd vcs_info
 
 #RPROMPT='${vcs_info_msg_0_}'
+
+# Unset helper.
+unfunction _exists
