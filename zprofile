@@ -3,7 +3,7 @@ source $HOME/.keychain/$HOST-sh
 
 export TMPDIR=/tmp
 
-export GOPATH=$HOME/workspace/go
+export GOPATH=$HOME/workspace/go/
 export PATH=$PATH:$GOPATH/bin
 export PATH="$HOME/.cargo/bin:$PATH"
 
@@ -14,9 +14,6 @@ if [ "$(tty)" = "/dev/tty2" ]; then
 	startxfce4
 fi
 
-# Accounting
-export LEDGER_FILE=$HOME/Documents/accounting-2019.journal
-
 # Proxy
 #export http_proxy=http://rpi2:8888
 # export https_proxy=http://rpi2:8888
@@ -25,3 +22,6 @@ export LEDGER_FILE=$HOME/Documents/accounting-2019.journal
 # export HTTPS_PROXY=$https_proxy
 #export FTP_PROXY=$ftp_proxy
 #export no_proxy=example.com,192.168.1.1,192.168.178.1,localexport LEDGER_FILE=/home/andre/Documents/accounting-2019.journal
+
+echo PATH: $PATH
+echo GOPATH: $GOPATH

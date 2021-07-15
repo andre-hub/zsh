@@ -1,5 +1,5 @@
 ###########         Aliases         ###########
-deviceWlan=wlp1s0
+deviceWlan=wlp52s0
 
 # Super user
 alias _='sudo'
