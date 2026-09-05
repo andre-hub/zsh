@@ -1,28 +1,9 @@
-# is x grep argument available?
-grep-flag-available() {
-    echo | grep $1 "" >/dev/null 2>&1
-}
-
-GREP_OPTIONS=""
-
-# color grep results
-if grep-flag-available --color=auto; then
-    GREP_OPTIONS+=" --color=auto"
+# Prefer the non-deprecated extended/fixed-pattern forms.
+alias egrep='grep -E'
+alias fgrep='grep -F'
+if command grep --color=auto '' </dev/null >/dev/null 2>&1; then
+  alias grep='grep --color=auto'
+elif [[ $OSTYPE == linux* ]]; then
+  # An empty input returns 1 even when --color is supported.
+  alias grep='grep --color=auto'
 fi
-
-# ignore VCS folders (if the necessary grep flags are available)
-VCS_FOLDERS="{.bzr,CVS,.git,.hg,.svn}"
-
-if grep-flag-available --exclude-dir=.cvs; then
-    GREP_OPTIONS+=" --exclude-dir=$VCS_FOLDERS"
-elif grep-flag-available --exclude=.cvs; then
-    GREP_OPTIONS+=" --exclude=$VCS_FOLDERS"
-fi
-
-# export grep settings
-alias grep="grep $GREP_OPTIONS"
-
-# clean up
-unset GREP_OPTIONS
-unset VCS_FOLDERS
-unfunction grep-flag-available

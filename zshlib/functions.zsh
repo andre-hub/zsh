@@ -1,311 +1,157 @@
-function findProcess {
-    processName=$1
-    ps ax | grep "$processName" | grep -v grep
-  }
+# Helpers are opt-in commands, never executed during startup.
+findProcess() {
+  (( $# == 1 )) || { print -u2 'usage: findProcess <pattern>'; return 2; }
+  command pgrep -fl -- "$1"
+}
 
-function open_command() {
+open_command() {
   emulate -L zsh
-  setopt shwordsplit
-
-  local open_cmd
-
-  # define the open command
-  case "$OSTYPE" in
-    darwin*)  open_cmd='open' ;;
-    cygwin*)  open_cmd='cygstart' ;;
-    linux*)   open_cmd='xdg-open' ;;
-    msys*)    open_cmd='start ""' ;;
-    *)        echo "Platform $OSTYPE not supported"
-              return 1
-              ;;
+  (( $# )) || { print -u2 'usage: open_command <file-or-url> [...]'; return 2; }
+  case $OSTYPE in
+    darwin*) command open "$@" ;;
+    linux*|freebsd*)
+      (( $+commands[xdg-open] )) || { print -u2 'open_command: xdg-open is not installed'; return 127; }
+      command xdg-open "$@" ;;
+    *) print -u2 'open_command: unsupported platform'; return 1 ;;
   esac
-
-  # don't use nohup on OSX
-  if [[ "$OSTYPE" == darwin* ]]; then
-    $open_cmd "$@" &>/dev/null
-  else
-    nohup $open_cmd "$@" &>/dev/null
-  fi
 }
 
-# Get the value of an alias.
-#
-# Arguments:
-#    1. alias - The alias to get its value from
-# STDOUT:
-#    The value of alias $1 (if it has one).
-# Return value:
-#    0 if the alias was found,
-#    1 if it does not exist
-#
-function alias_value() {
-    alias "$1" | sed "s/^$1='\(.*\)'$/\1/"
-    test $(alias "$1")
+urlencode() {
+  (( $# == 1 )) || { print -u2 'usage: urlencode <text>'; return 2; }
+  command python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$1"
+}
+urldecode() {
+  (( $# == 1 )) || { print -u2 'usage: urldecode <text>'; return 2; }
+  command python3 -c 'import sys, urllib.parse; print(urllib.parse.unquote_plus(sys.argv[1]))' "$1"
 }
 
-
-# URL-encode a string
-#
-# Encodes a string using RFC 2396 URL-encoding (%-escaped).
-# See: https://www.ietf.org/rfc/rfc2396.txt
-#
-# By default, reserved characters and unreserved "mark" characters are
-# not escaped by this function. This allows the common usage of passing
-# an entire URL in, and encoding just special characters in it, with
-# the expectation that reserved and mark characters are used appropriately.
-# The -r and -m options turn on escaping of the reserved and mark characters,
-# respectively, which allows arbitrary strings to be fully escaped for
-# embedding inside URLs, where reserved characters might be misinterpreted.
-#
-# Prints the encoded string on stdout.
-# Returns nonzero if encoding failed.
-#
-# Usage:
-#  omz_urlencode [-r] [-m] [-P] <string>
-#
-#    -r causes reserved characters (;/?:@&=+$,) to be escaped
-#
-#    -m causes "mark" characters (_.!~*''()-) to be escaped
-#
-#    -P causes spaces to be encoded as '%20' instead of '+'
-function omz_urlencode() {
+dl() (
   emulate -L zsh
-  zparseopts -D -E -a opts r m P
+  (( $# >= 1 && $# <= 2 )) || { print -u2 'usage: dl <url> [destination-directory]'; return 2; }
+  (( $+commands[aria2c] )) || { print -u2 'dl: aria2c is not installed'; return 127; }
+  builtin cd -- "${2:-$PWD}" 2>/dev/null || { print -u2 'dl: destination unavailable'; return 1; }
+  command aria2c -c -j 8 -x 12 --quiet=true -- "$1" 2>/dev/null || { print -u2 'dl: download failed'; return 1; }
+)
 
-  local in_str=$1
-  local url_str=""
-  local spaces_as_plus
-  if [[ -z $opts[(r)-P] ]]; then spaces_as_plus=1; fi
-  local str="$in_str"
-
-  # URLs must use UTF-8 encoding; convert str to UTF-8 if required
-  local encoding=$langinfo[CODESET]
-  local safe_encodings
-  safe_encodings=(UTF-8 utf8 US-ASCII)
-  if [[ -z ${safe_encodings[(r)$encoding]} ]]; then
-    str=$(echo -E "$str" | iconv -f $encoding -t UTF-8)
-    if [[ $? != 0 ]]; then
-      echo "Error converting string from $encoding to UTF-8" >&2
-      return 1
-    fi
-  fi
-
-  # Use LC_CTYPE=C to process text byte-by-byte
-  local i byte ord LC_ALL=C
-  export LC_ALL
-  local reserved=';/?:@&=+$,'
-  local mark='_.!~*''()-'
-  local dont_escape="[A-Za-z0-9"
-  if [[ -z $opts[(r)-r] ]]; then
-    dont_escape+=$reserved
-  fi
-  # $mark must be last because of the "-"
-  if [[ -z $opts[(r)-m] ]]; then
-    dont_escape+=$mark
-  fi
-  dont_escape+="]"
-
-  # Implemented to use a single printf call and avoid subshells in the loop,
-  # for performance (primarily on Windows).
-  local url_str=""
-  for (( i = 1; i <= ${#str}; ++i )); do
-    byte="$str[i]"
-    if [[ "$byte" =~ "$dont_escape" ]]; then
-      url_str+="$byte"
-    else
-      if [[ "$byte" == " " && -n $spaces_as_plus ]]; then
-        url_str+="+"
-      else
-        ord=$(( [##16] #byte ))
-        url_str+="%$ord"
-      fi
-    fi
+# Run an explicit command in each immediate child directory, preserving cwd.
+rDir() (
+  emulate -L zsh
+  (( $# >= 2 )) && [[ -d $1 ]] || { print -u2 'usage: rDir <directory> <command> [argument ...]'; return 2; }
+  local root=${1:a} directory result=0
+  shift
+  for directory in "$root"/*(/N); do
+    (builtin cd -- "$directory" && "$@") || result=$?
   done
-  echo -E "$url_str"
-}
+  return $result
+)
 
-# URL-decode a string
-#
-# Decodes a RFC 2396 URL-encoded (%-escaped) string.
-# This decodes the '+' and '%' escapes in the input string, and leaves
-# other characters unchanged. Does not enforce that the input is a
-# valid URL-encoded string. This is a convenience to allow callers to
-# pass in a full URL or similar strings and decode them for human
-# presentation.
-#
-# Outputs the encoded string on stdout.
-# Returns nonzero if encoding failed.
-#
-# Usage:
-#   omz_urldecode <urlstring>  - prints decoded string followed by a newline
-function omz_urldecode {
+# Stage next to the output; os.link publishes without replacing a racing target.
+_zsh_pdfwrite() (
   emulate -L zsh
-  local encoded_url=$1
+  local output=${1:a} staging
+  shift
+  (( $+commands[gs] && $+commands[python3] )) || { print -u2 'PDF: Ghostscript and Python 3 are required'; return 127; }
+  [[ ! -e $output && ! -L $output ]] || { print -u2 'PDF: output already exists'; return 1; }
+  staging=$(command mktemp -d "${output:h}/.zsh-pdf.XXXXXXXX" 2>/dev/null) || { print -u2 'PDF: output directory unavailable'; return 1; }
+  trap 'command rm -rf -- "$staging"' EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  command gs -q -dBATCH -dNOPAUSE -dSAFER -sDEVICE=pdfwrite "-sOutputFile=$staging/output.pdf" "$@" >/dev/null 2>&1 || { print -u2 'PDF: conversion failed'; return 1; }
+  [[ -s $staging/output.pdf ]] || { print -u2 'PDF: empty output'; return 1; }
+  command python3 -c 'import os,sys; os.link(sys.argv[1], sys.argv[2])' "$staging/output.pdf" "$output" 2>/dev/null || { print -u2 'PDF: output publication failed'; return 1; }
+)
 
-  # Work bytewise, since URLs escape UTF-8 octets
-  local caller_encoding=$langinfo[CODESET]
-  local LC_ALL=C
-  export LC_ALL
-
-  # Change + back to ' '
-  local tmp=${encoded_url:gs/+/ /}
-  # Protect other escapes to pass through the printf unchanged
-  tmp=${tmp:gs/\\/\\\\/}
-  # Handle %-escapes by turning them into `\xXX` printf escapes
-  tmp=${tmp:gs/%/\\x/}
-  local decoded
-  eval "decoded=\$'$tmp'"
-
-  # Now we have a UTF-8 encoded string in the variable. We need to re-encode
-  # it if caller is in a non-UTF-8 locale.
-  local safe_encodings
-  safe_encodings=(UTF-8 utf8 US-ASCII)
-  if [[ -z ${safe_encodings[(r)$caller_encoding]} ]]; then
-    decoded=$(echo -E "$decoded" | iconv -f UTF-8 -t $caller_encoding)
-    if [[ $? != 0 ]]; then
-      echo "Error converting string from UTF-8 to $caller_encoding" >&2
-      return 1
-    fi
-  fi
-
-  echo -E "$decoded"
+pdfmerge() {
+  emulate -L zsh
+  (( $# >= 2 )) || { print -u2 'usage: pdfmerge <first.pdf> <second.pdf> [...]'; return 2; }
+  local output="${1%.*}-new.pdf" file
+  local -a inputs=()
+  for file in "$@"; do
+    [[ -f $file ]] || { print -u2 'pdfmerge: missing input'; return 1; }
+    inputs+=("${file:a}")
+  done
+  _zsh_pdfwrite "$output" -dPDFSETTINGS=/prepress "${inputs[@]}"
 }
 
+pdfresize() {
+  emulate -L zsh
+  (( $# >= 2 && $# <= 3 )) && [[ -f $1 ]] || { print -u2 'usage: pdfresize <input.pdf> <output.pdf> [dpi]'; return 2; }
+  local dpi=${3:-150}
+  [[ $dpi == <1-9600> ]] || { print -u2 'pdfresize: dpi must be between 1 and 9600'; return 2; }
+  _zsh_pdfwrite "$2" -dCompatibilityLevel=1.4 -dPDFSETTINGS=/ebook \
+    -dEmbedAllFonts=true -dSubsetFonts=true -dAutoRotatePages=/None \
+    -dColorImageDownsampleType=/Bicubic -dColorImageResolution=$dpi \
+    -dGrayImageDownsampleType=/Bicubic -dGrayImageResolution=$dpi \
+    -dMonoImageDownsampleType=/Bicubic -dMonoImageResolution=$dpi "${1:a}"
+}
 
-  # simple backup of all files
-  # (on future/todo: copy files to git repo dir and commit and upload to git hub)
-  function zshbackup() {
-    BACKUPPATH="workspace/zsh.git"
-    echo "$fg_bold[red]Save all Login/ZSH Session Files:$fg_bold[white]"
+bookmark() {
+  emulate -L zsh
+  (( $# == 0 )) || { print -u2 'usage: bookmark'; return 2; }
+  [[ -r $HOME/.zsh_bookmarks ]] || { print -u2 'bookmark: bookmark file is missing'; return 1; }
+  (( $+commands[fzf] )) || { print -u2 'bookmark: fzf is not installed'; return 127; }
+  local selected
+  selected=$(FZF_DEFAULT_OPTS= FZF_DEFAULT_OPTS_FILE=/dev/null command fzf --no-multi < "$HOME/.zsh_bookmarks" 2>/dev/null) || return $?
+  [[ -n $selected ]] && print -z -- "$selected"
+}
 
-    cp ~/.zshrc ~/$BACKUPPATH/zshrc
-    echo "zshrc"
+chmodx() {
+  emulate -L zsh
+  (( $# )) && [[ -f $1 ]] || { print -u2 'usage: chmodx <file> [argument ...]'; return 2; }
+  local executable=${1:a}
+  shift
+  command chmod +x -- "$executable" 2>/dev/null || { print -u2 'chmodx: chmod failed'; return 1; }
+  "$executable" "$@"
+}
 
-    cp ~/.zlogout ~/$BACKUPPATH/zlogout
-    echo "zlogout"
-
-    cp ~/.zprofile ~/$BACKUPPATH/zprofile
-    echo "zprofile"
-
-    if [ ! -d ~/$BACKUPPATH/zshlib ]; then
-    mkdir ~/$BACKUPPATH/zshlib
-    fi
-    cp -R ~/.zshlib/* ~/$BACKUPPATH/zshlib/
-    echo "zshlib"
-
-    if [ ! -d ~/$BACKUPPATH/zshplugins ]; then
-    mkdir ~/$BACKUPPATH/zshplugins
-    fi
-    cp -R ~/.zshplugins/* ~/$BACKUPPATH/zshplugins/
-    echo "zshplugins"
-
-    if [ ! -d ~/$BACKUPPATH/zsh-syntax-highlighting ]; then
-    mkdir ~/$BACKUPPATH/zsh-syntax-highlighting
-    fi
-    cp -R ~/.zsh-syntax-highlighting/* ~/$BACKUPPATH/zsh-syntax-highlighting/
-    echo "zsh-syntax-highlighting"
-    }
-
-# Usage: gpg-add ()
-# Description: backup server data  Defaults /var/www
- function gpg-add(){
-   if [ $1 ]; then
-   gpg --keyserver keyserver.ubuntu.com --recv $1
-   gpg --export --armor $1 | sudo apt-key add -
-    else
-      echo "gpg key not found"
-    fi
-  }
-
-  function rsync-dotfiles() {
-    if [ $1 ]; then
-       rsync --copy-links ~/.* $1  2> ~/rsync-dotfiles.log
-    else
-      echo "target dir is require"
-    fi
-  }
-
- function dl() {
-   if [ $1 ]; then
-     temp=`pwd`
-     if [ $2 ]; then
-        cd $2
-     else
-        cd ~/Downloads/Temp/
-     fi
-     aria2c -c -j 2 -x 10 $1
-     cd $temp
-  else
-    echo "no url"
-  fi
-  }
-
-# create a new script, automatically populating the shebang line, editing the
-# script, and making it executable.
-# http://www.commandlinefu.com/commands/view/8050/
 shebang() {
-    if i=$(which $1);
-    then
-        printf '#!/usr/bin/env %s\n\n' $1 > $2 && chmod 755 $2 && vim + $2 && chmod 755 $2;
-    else
-        echo "'which' could not find $1, is it in your \$PATH?";
-    fi;
-    # in case the new script is in path, this throw out the command hash table and
-    # start over  (man zshbuiltins)
-    rehash
+  emulate -L zsh
+  setopt extended_glob noclobber
+  (( $# == 2 )) && [[ $1 == [a-zA-Z][a-zA-Z0-9._+-]# ]] || { print -u2 'usage: shebang <interpreter-name> <new-file>'; return 2; }
+  local interpreter=$1 target=${2:a}
+  local -a editor=("${(@Q)${(z)${VISUAL:-${EDITOR:-vim}}}}")
+  [[ ! -e $target && ! -L $target ]] || { print -u2 'shebang: target already exists'; return 1; }
+  (( $+commands[$interpreter] )) || { print -u2 'shebang: interpreter is not installed'; return 127; }
+  if [[ $editor[1] == */* ]]; then
+    [[ -f $editor[1] && -x $editor[1] ]] || { print -u2 'shebang: editor is not executable'; return 127; }
+  else
+    (( ${#editor} )) && (( $+commands[$editor[1]] )) || { print -u2 'shebang: editor is not installed'; return 127; }
+  fi
+  { print -r -- "#!/usr/bin/env $interpreter" > "$target"; } 2>/dev/null || { print -u2 'shebang: cannot create target'; return 1; }
+  command chmod +x -- "$target" 2>/dev/null || { print -u2 'shebang: chmod failed'; return 1; }
+  "${editor[@]}" "$target"
 }
 
+zshbindings() { bindkey; }
 
-function rDir() {
-    for d ($1/*(/)) {
-        echo $d
-        cd $d && $2 && cd ..
-    } 
+yt() {
+  (( $# == 1 )) || { print -u2 'usage: yt <url>'; return 2; }
+  (( $+commands[yt-dlp] )) || { print -u2 'yt: yt-dlp is not installed'; return 127; }
+  command yt-dlp --quiet --no-progress --no-overwrites -x -- "$1" 2>/dev/null || { print -u2 'yt: download failed'; return 1; }
 }
 
-function zshstats() {
-  history | awk '{print $2}' | sort | uniq -c | sort -rn | head
-}
-
-function take() {
-  mkdir -p $1
-  cd $1
-}
-
-function pdfmerge() {
-  gs -dBATCH -dNOPAUSE -o ${1/'.pdf'/'-new.pdf'} -sDevice=pdfwrite -dPDFSETTING=/prepress $1 $2 $3
-}
-
-function pdfreconvert() {
-  gs -r600 -o ${1/'.pdf'/'-new.pdf'} -sDevice=pdfwrite -dPDFSETTING=/prepress $1
-}
-
-function pdfresize() {
-	filename=$1
-	outFilename=$2
-	dpi=$3
-	gs -q -dNOPAUSE -dBATCH -dSAFER -dPDFA=2 -dPDFACompatibilityPolicy=1 -dSimulateOverprint=true -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 \
-	 -dPDFSETTINGS=/ebook -dEmbedAllFonts=true -dSubsetFonts=true -dAutoRotatePages=/None -dColorImageDownsampleType=/Bicubic \
-	 -dColorImageResolution=$dpi -dGrayImageDownsampleType=/Bicubic -dGrayImageResolution=$dpi -dMonoImageDownsampleType=/Bicubic \
-	 -dMonoImageResolution=$dpi -sOutputFile=$outFilename $filename
-}
-
-function dotFolderBackup {
-  name=$1
-  mv .$name $name
-  pack $name tar
-  mv $name .$name
-  pack $name.tar xz
-  mv $name.tar.xz $name-`date +%Y-%m-%d_%H-%M`.tar.xz
-  rm $name.tar
-}
-
-(( $+functions[rsync-backup] )) || function rsync-backup() {
-  SyncNameDir=$1
-  SyncTargetDir=$2
-  rsync ${SyncNameDir} ${SyncTargetDir}
-  cd ${SyncTargetDir}
-  mv ${SyncNameDir} ${SyncNameDir}-`date +%Y-%m-%d`
-  thunar ${SyncTargetDir}
-  cd ~
+# Only generic hardware properties; no hostname, addresses or serial numbers.
+hardwareinfo() {
+  emulate -L zsh
+  local cpu memory
+  case $OSTYPE in
+    linux*|cygwin*)
+      cpu=$(command awk -F ': *' '/model name|^Processor/{print $2; exit}' /proc/cpuinfo 2>/dev/null) || return 1
+      memory=$(command awk '/MemTotal:/{printf "%.1f", $2/1048576}' /proc/meminfo 2>/dev/null) || return 1
+      ;;
+    freebsd*|darwin*)
+      if [[ $OSTYPE == freebsd* ]]; then
+        cpu=$(command sysctl -n hw.model 2>/dev/null) || return 1
+        memory=$(command sysctl -n hw.physmem 2>/dev/null) || return 1
+      else
+        cpu=$(command sysctl -n machdep.cpu.brand_string 2>/dev/null) || cpu=$(command sysctl -n hw.model 2>/dev/null) || return 1
+        memory=$(command sysctl -n hw.memsize 2>/dev/null) || return 1
+      fi
+      [[ $memory == <-> ]] || return 1
+      memory=$(print -r -- "$memory" | command awk '{printf "%.1f", $1/1073741824}')
+      ;;
+    *) print -u2 'hardwareinfo: unsupported platform'; return 1 ;;
+  esac
+  [[ -n $cpu && -n $memory ]] || { print -u2 'hardwareinfo: properties unavailable'; return 1; }
+  print -rl -- "CPU: $cpu" "RAM: $memory GiB"
 }

@@ -1,225 +1,76 @@
-	# Authors:
-# https://github.com/AlexBio
-# https://github.com/dbb
-#
-# Debian-related zsh aliases and functions for zsh
+# Debian package shortcuts. Nothing runs until a shortcut is invoked.
+[[ $OSTYPE == linux* && -r /etc/debian_version ]] || return 0
+(( $+commands[apt-get] )) || return 0
 
-# Use aptitude if installed, or apt-get if not.
-# You can just set apt_pref='apt-get' to override it.
-if [[ -e $( which aptitude ) ]]; then
-    apt_pref='aptitude'
-else
-    apt_pref='apt-get'
-fi
-
-# Use sudo by default if it's installed
-if [[ -e $( which sudo ) ]]; then
-    use_sudo=1
-fi
-
-# Aliases ###################################################################
-# These are for more obscure uses of apt-get and aptitude that aren't covered
-# below.
-alias ag='apt-get'
-alias at='aptitude'
-
-# Some self-explanatory aliases
-alias acs="apt-cache search"
-alias aps='aptitude search'
-alias as="aptitude -F \"* %p -> %d \n(%v/%V)\" \
-		--no-gui --disable-columns search"	# search package
-
-# apt-file
-alias afs='apt-file search --regexp'
-
-
-# These are apt-get only
-alias asrc='apt-get source'
-alias ap='apt-cache policy'
-
-# superuser operations ######################################################
-if [[ $use_sudo -eq 1 ]]; then
-# commands using sudo #######
-    alias aac="sudo $apt_pref autoclean"
-    alias abd="sudo $apt_pref build-dep"
-    alias ac="sudo $apt_pref clean"
-    alias ad="sudo $apt_pref update"
-    alias adg="sudo $apt_pref update && sudo $apt_pref upgrade"
-    alias adu="sudo $apt_pref update && sudo $apt_pref dist-upgrade"
-    alias afu='sudo apt-file update'
-    alias ag="sudo $apt_pref upgrade"
-    alias ai="sudo $apt_pref install"
-    alias ap="sudo $apt_pref purge"
-    alias ar="sudo $apt_pref remove"
-
-    # apt-get only
-    alias ads="sudo $apt_pref dselect-upgrade"
-
-    # Install all .deb files in the current directory.
-    # Warning: you will need to put the glob in single quotes if you use:
-    # glob_subst
-    alias di='sudo dpkg -i ./*.deb'
-
-    # Remove ALL kernel images and headers EXCEPT the one in use
-    alias kclean='sudo aptitude remove -P ?and(~i~nlinux-(ima|hea) \
-        ?not(~n`uname -r`))'
-
-
-# commands using su #########
-else
-    alias aac='su -ls "'"$apt_pref"' autoclean" root'
-    abd() {
-        cmd="su -lc '$apt_pref build-dep $@' root"
-        print "$cmd"
-        eval "$cmd"
-    }
-    alias ac='su -ls "'"$apt_pref"' clean" root'
-    alias ad='su -lc "'"$apt_pref"' update" root'
-    alias adg='su -lc "'"$apt_pref"' update && aptitude safe-upgrade" root'
-    alias adu='su -lc "'"$apt_pref"' update && aptitude dist-upgrade" root'
-    alias afu='su -lc "apt-file update"'
-    alias ag='su -lc "'"$apt_pref"' safe-upgrade" root'
-    ai() {
-        cmd="su -lc 'aptitude -P install $@' root"
-        print "$cmd"
-        eval "$cmd"
-    }
-    ar() {
-        cmd="su -lc '$apt_pref -P remove $@' root"
-        print "$cmd"
-        eval "$cmd"
-    }
-
-    # Install all .deb files in the current directory
-    # Assumes glob_subst is off
-    alias di='su -lc "dpkg -i ./*.deb" root'
-
-    # Remove ALL kernel images and headers EXCEPT the one in use
-    alias kclean='su -lc '\''aptitude remove -P ?and(~i~nlinux-(ima|hea) \
-        ?not(~n`uname -r`))'\'' root'
-fi
-
-
-# Misc. #####################################################################
-# print all installed packages
-alias allpkgs='aptitude search -F "%p" --disable-columns ~i'
-
-# Create a basic .deb package
-alias mydeb='time dpkg-buildpackage -rfakeroot -us -uc'
-
-
-# Functions #################################################################
-# create a simple script that can be used to 'duplicate' a system
-apt-copy() {
-    print '#!/bin/sh'"\n" > apt-copy.sh
-
-    cmd="$apt_pref install "
-
-    for p in ${(f)"$(aptitude search -F "%p" --disable-columns \~i)"}; {
-        cmd="${cmd} ${p}"
-    }
-
-    print $cmd "\n" >> apt-copy.sh
-
-    chmod +x apt-copy.sh
-}
-
-# Prints apt history
-# Usage:
-#   apt-history install
-#   apt-history upgrade
-#   apt-history remove
-#   apt-history rollback
-#   apt-history list
-# Based On: http://linuxcommando.blogspot.com/2008/08/how-to-show-apt-log-history.html
-apt-history () {
-  case "$1" in
-    install)
-      zgrep --no-filename 'install ' $(ls -rt /var/log/dpkg*)
-      ;;
-    upgrade|remove)
-      zgrep --no-filename $1 $(ls -rt /var/log/dpkg*)
-      ;;
-    rollback)
-      zgrep --no-filename upgrade $(ls -rt /var/log/dpkg*) | \
-        grep "$2" -A10000000 | \
-        grep "$3" -B10000000 | \
-        awk '{print $4"="$5}'
-      ;;
-    list)
-      zcat $(ls -rt /var/log/dpkg*)
-      ;;
-    *)
-      echo "Parameters:"
-      echo " install - Lists all packages that have been installed."
-      echo " upgrade - Lists all packages that have been upgraded."
-      echo " remove - Lists all packages that have been removed."
-      echo " rollback - Lists rollback information."
-      echo " list - Lists all contains of dpkg logs."
-      ;;
-  esac
-}
-
-# Kernel-package building shortcut
-kerndeb () {
-    # temporarily unset MAKEFLAGS ( '-j3' will fail )
-    MAKEFLAGS=$( print - $MAKEFLAGS | perl -pe 's/-j\s*[\d]+//g' )
-    print '$MAKEFLAGS set to '"'$MAKEFLAGS'"
-	appendage='-custom' # this shows up in $ (uname -r )
-    revision=$(date +"%Y%m%d") # this shows up in the .deb file name
-
-    make-kpkg clean
-
-    time fakeroot make-kpkg --append-to-version "$appendage" --revision \
-        "$revision" kernel_image kernel_headers
-}
-
-function packageinstall() {
-    case $2 in
-      single|allein)
-        for paket in $(cat $1); do
-          echo "\n\n" $paket;
-          sudo apt-get -y install $paket;
-          done
-          ;;
-      all|alles)
-        sudo apt-get -y install $(cat $1);
-        ;;
-      *)
-      echo "Fehler: $2 ist ungültig"
-      ;;
-    esac
-}
-
-function apt-date(){
-	if [[ -e $( which aptitude ) ]]; then
-        sudo aptitude update && sudo aptitude safe-upgrade && sudo aptitude autoclean && sudo aptitude clean
+# apt_pref may be apt, apt-get or aptitude; never evaluate command strings.
+: ${apt_pref:=apt-get}
+_zsh_debian_root() {
+    emulate -L zsh
+    if (( EUID == 0 )); then
+        command "$@"
+    elif (( $+commands[sudo] )); then
+        command sudo "$@"
     else
-        sudo apt-get update && sudo apt-get -y upgrade && sudo apt-get autoremove && sudo apt-get autoclean
+        print -u2 'This operation requires root or sudo.'
+        return 1
     fi
 }
-
-function ins(){
-    sudo apt-get -y install $1
+_zsh_debian_apt() {
+    emulate -L zsh
+    case $apt_pref in
+        apt|apt-get|aptitude) _zsh_debian_root "$apt_pref" "$@" ;;
+        *) print -u2 'apt_pref must be apt, apt-get or aptitude.'; return 2 ;;
+    esac
 }
-
-function packagelist() {
-  	Y=`date +%Y-%m-%d`
-	dpkg-query -l  | grep ^ii | awk '{print $2}' > ~/debian-apt-pkglist-$Y.txt
+alias aac='_zsh_debian_apt autoclean'
+alias abd='_zsh_debian_apt build-dep'
+alias ac='_zsh_debian_apt clean'
+alias ad='_zsh_debian_apt update'
+alias adg='_zsh_debian_apt update && _zsh_debian_apt upgrade'
+alias adu='_zsh_debian_apt update && _zsh_debian_apt dist-upgrade'
+alias ag='_zsh_debian_apt upgrade'
+alias ar='_zsh_debian_apt remove'
+alias apt-install='_zsh_debian_apt install'
+alias apt-purge='_zsh_debian_apt purge'
+alias acs='apt-cache search'
+alias acsv='apt-cache show'
+alias ap='apt-cache policy'
+alias asrc='apt-get source'
+alias allpkgs="dpkg-query -f '\${Package}\\n' -W"
+(( $+commands[aptitude] )) && alias at='aptitude'
+(( $+commands[apt-file] )) && alias afs='apt-file search --regexp'
+(( $+commands[dpkg-buildpackage] )) && alias mydeb='dpkg-buildpackage -us -uc'
+ins() { _zsh_debian_apt install "$@"; }
+apt-date() {
+    _zsh_debian_apt update && _zsh_debian_apt upgrade &&
+        _zsh_debian_apt autoremove && _zsh_debian_apt autoclean
 }
-
-function packagerestore() {
-  	sudo dpkg --set-selections < $1
-	sudo apt-get dselect-upgrade
+# Output is reusable by packagerestore; redirect explicitly to save it.
+packagelist() { command dpkg --get-selections; }
+packagerestore() {
+    (( $# == 1 )) && [[ -r $1 ]] || { print -u2 'Usage: packagerestore FILE'; return 2; }
+    _zsh_debian_root dpkg --set-selections < "$1" &&
+        _zsh_debian_root apt-get dselect-upgrade
 }
-
-function build1(){
-   ./configure  &&  fakeroot dpkg-buildpackage
+packageinstall() {
+    emulate -L zsh
+    (( $# == 2 )) && [[ -r $1 ]] || { print -u2 'Usage: packageinstall FILE single|all'; return 2; }
+    [[ $2 == (single|allein|all|alles) ]] || return 2
+    local package
+    local -a packages
+    while IFS= read -r package || [[ -n $package ]]; do
+        [[ -z $package || $package == \#* ]] && continue
+        # One package per line, not arbitrary apt options or shell syntax.
+        [[ $package == [a-z0-9]* && $package != *[^a-z0-9+.:_-]* ]] || return 2
+        packages+=("$package")
+    done < "$1"
+    (( ${#packages} )) || return 0
+    if [[ $2 == (single|allein) ]]; then
+        for package in "${packages[@]}"; do
+            _zsh_debian_apt install "$package" || return
+        done
+    else
+        _zsh_debian_apt install "${packages[@]}"
+    fi
 }
-
-function build2(){
-   dh_make --createorig -s --email $1
-   dpkg-buildpackage -S -sa -rfakeroot
-   sudo pbuilder create ../*.dsc
-   sudo pbuilder build ../*.dsc
-}
+return 0

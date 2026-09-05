@@ -1,10 +1,15 @@
-
-CYGWIN="${CYGWIN} nodosfilewarning"; export CYGWIN
-
-alias browse='explorer .'
-alias build='cmd.exe /c "msbuild.exe /consoleloggerparameters:Verbosity=minimal;Summary .\src\bld\master.msbuild"'
-alias sln='cygstart `find . -type f -name "*.sln"`'
-
-function _start_sublime() {
-  /cygdrive/c/Program\ Files/SublimeText3/sublime_text.exe -a . "$1" &
-}
+[[ $OSTYPE == cygwin* ]] || return 0
+(( $+commands[explorer] )) && alias browse='explorer .'
+if (( $+commands[cygstart] )); then
+    sln() {
+        emulate -L zsh
+        local -a solutions=( **/*.sln(N) )
+        (( $# )) && solutions=( "$@" )
+        (( ${#solutions} == 1 )) || {
+            print -u2 'Usage: sln FILE (or run in a tree with exactly one solution)'
+            return 2
+        }
+        command cygstart "${solutions[1]}"
+    }
+fi
+return 0

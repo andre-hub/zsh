@@ -1,83 +1,64 @@
-# Usage: simple-extract <file>
-# Description: extracts archived files (maybe)
-  function depack() {
-  if [[ -f "$1" ]]; then
-    case "$1" in
-      *.tar.lrz)
-        b=$(basename "$1" .tar.lrz)
-        lrztar -d "$1" && [[ -d "$b" ]] && cd "$b" ;;
-      *.lrz)
-        b=$(basename "$1" .lrz)
-        lrunzip "$1" && [[ -d "$b" ]] && cd "$b" ;;
-      *.tar.bz2)
-        b=$(basename "$1" .tar.bz2)
-        tar xjf "$1" && [[ -d "$b" ]] && cd "$b" ;;
-      *.bz2)
-        b=$(basename "$1" .bz2)
-        bunzip2 "$1" && [[ -d "$b" ]] && cd "$b" ;;
-      *.tar.gz)
-        b=$(basename "$1" .tar.gz)
-        tar xzf "$1" && [[ -d "$b" ]] && cd "$b" ;;
-      *.gz)
-        b=$(basename "$1" .gz)
-        gunzip "$1" && [[ -d "$b" ]] && cd "$b" ;;
-      *.tar.xz)
-        b=$(basename "$1" .tar.xz)
-        tar Jxf "$1" && [[ -d "$b" ]] && cd "$b" ;;
-      *.xz)
-        b=$(basename "$1" .gz)
-        xz -d "$1" && [[ -d "$b" ]] && cd "$b" ;;
-      *.rar)
-        b=$(basename "$1" .rar)
-        unrar e "$1" && [[ -d "$b" ]] && cd "$b" ;;
-      *.tar)
-        b=$(basename "$1" .tar)
-        tar xf "$1" && [[ -d "$b" ]] && cd "$b" ;;
-      *.tbz2)
-        b=$(basename "$1" .tbz2)
-        tar xjf "$1" && [[ -d "$b" ]] && cd "$b" ;;
-      *.tgz)
-        b=$(basename "$1" .tgz)
-        tar xzf "$1" && [[ -d "$b" ]] && cd "$b" ;;
-      *.zip)
-        b=$(basename "$1" .zip)
-        unzip "$1" && [[ -d "$b" ]] && cd "$b" ;;
-      *.Z)
-        b=$(basename "$1" .Z)
-        uncompress "$1" && [[ -d "$b" ]] && cd "$b" ;;
-      *.7z)
-        b=$(basename "$1" .7z)
-        7z x "$1" && [[ -d "$b" ]] && cd "$b" ;;
-      *.xz)
-        b=$(basename "$1" .xz)
-        xz -k -v -d "$1" && [[ -d "$b" ]] && cd "$b" ;; 
-      *) echo "don't know how to extract '$1'..." && return 1;;
-    esac
-    return 0
-  else
-    echo "'$1' is not a valid file!"
-    return 1
-  fi
-  }
+# Extract only trusted archives into a suitable working directory.
+# Extraction tools determine overwrite and path handling; this is not a sandbox.
+depack() {
+  emulate -L zsh
+  setopt pipefail
+  (( $# == 1 )) && [[ -f $1 ]] || { print -u2 'usage: depack <archive>'; return 2; }
+  local file=${1:a} base=${1:t}
+  case $file in
+    *.tar.gz|*.tgz) command tar -xzf "$file" ;;
+    *.tar.bz2|*.tbz2) command tar -xjf "$file" ;;
+    *.tar.xz) command tar -xJf "$file" ;;
+    *.tar.zst) command zstd -dc -- "$file" | command tar -xf - ;;
+    *.tar) command tar -xf "$file" ;;
+    *.gz) command gunzip -- "$file" ;;
+    *.bz2) command bunzip2 -- "$file" ;;
+    *.xz) command xz -d -- "$file" ;;
+    *.zst) command zstd -d -- "$file" ;;
+    *.zip) command unzip "$file" ;;
+    *.7z) command 7z x "$file" ;;
+    *.rar) command unrar x "$file" ;;
+    *.Z) command uncompress "$file" ;;
+    *) print -u2 'depack: unsupported archive type'; return 2 ;;
+  esac
+  local result=$?
+  (( result == 0 )) || return $result
+  case $base in
+    *.tar.*) base=${base%.tar.*} ;;
+    *) base=${base%.*} ;;
+  esac
+  [[ ! -d $base ]] || builtin cd -- "$base" || return
+  return 0
+}
 
-# Usage: smartcompress <file> (<type>)
-# Description: compresses files or a directory.  Defaults to tar.gz
-function pack() {
-  if [ $2 ]; then
-    case $2 in
-      tgz | tar.gz)   tar -zcvf $1.$2 $1 ;;
-      tbz2 | tar.bz2) tar -jcvf $1.$2 $1 ;;
-      tar.Z)          tar -Zcvf $1.$2 $1 ;;
-      tar)            tar -cvf $1.$2  $1 ;;
-      gz | gzip)      gzip           $1 ;;
-      bz2 | bzip2)    bzip2          $1 ;;
-      7z |7zip)       7z a $1.$2     $1 ;;
-      xz)             xz -k -v -z $1 ;;
-      *)
-      echo "Error: $2 is not a valid compression type"
-      ;;
-    esac
-  else
-    pack $1 tar.gz
-  fi
+pack() {
+  emulate -L zsh
+  setopt pipefail
+  (( $# >= 1 && $# <= 2 )) && [[ -e $1 ]] || { print -u2 'usage: pack <path> [type]'; return 2; }
+  local name=${1%/} type=${2:-tar.gz}
+  [[ $name == /* ]] || name=./$name
+  case $type in
+    tgz|tar.gz) command tar -zcf "${name}.${type}" "$name" ;;
+    tbz2|tar.bz2) command tar -jcf "${name}.${type}" "$name" ;;
+    tar.xz) command tar -Jcf "${name}.tar.xz" "$name" ;;
+    tar.zst) command tar -cf - "$name" | command zstd -o "${name}.tar.zst" ;;
+    tar) command tar -cf "${name}.tar" "$name" ;;
+    gz|gzip) command gzip -- "$name" ;;
+    bz2|bzip2) command bzip2 -- "$name" ;;
+    xz) command xz -k -- "$name" ;;
+    zst|zstd) command zstd -- "$name" ;;
+    7z|7zip) command 7z a "${name}.7z" "$name" ;;
+    *) print -u2 'pack: unsupported compression type'; return 2 ;;
+  esac
+}
+
+packFolder() {
+  emulate -L zsh
+  (( $# == 1 )) && [[ -d $1 ]] || { print -u2 'usage: packFolder <directory>'; return 2; }
+  local name=${1%/} destination
+  [[ $name == /* ]] || name=./$name
+  destination="${name}-$(date +%Y-%m-%d_%H-%M).tar.xz"
+  [[ ! -e $destination ]] || { print -u2 'packFolder: destination already exists'; return 1; }
+  # One archive operation; failures never trigger rename/removal of unrelated files.
+  command tar -Jcf "$destination" "$name"
 }

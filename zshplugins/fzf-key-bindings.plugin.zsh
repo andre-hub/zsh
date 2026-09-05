@@ -1,88 +1,58 @@
-# Key bindings
-# ------------
-if [[ $- == *i* ]]; then
-
-# CTRL-T - Paste the selected file path(s) into the command line
-__fsel() {
-  local cmd="${FZF_CTRL_T_COMMAND:-"command find -L . -mindepth 1 \\( -path '*/\\.*' -o -fstype 'sysfs' -o -fstype 'devfs' -o -fstype 'devtmpfs' -o -fstype 'proc' \\) -prune \
-    -o -type f -print \
-    -o -type d -print \
-    -o -type l -print 2> /dev/null | cut -b3-"}"
-  setopt localoptions pipefail 2> /dev/null
-  eval "$cmd" | FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse $FZF_DEFAULT_OPTS $FZF_CTRL_T_OPTS" $(__fzfcmd) -m "$@" | while read item; do
-    echo -n "${(q)item} "
-  done
-  local ret=$?
-  echo
-  return $ret
-}
-
-__fzf_use_tmux__() {
-  [ -n "$TMUX_PANE" ] && [ "${FZF_TMUX:-0}" != 0 ] && [ ${LINES:-40} -gt 15 ]
-}
-
-__fzfcmd() {
-  __fzf_use_tmux__ &&
-    echo "fzf-tmux -d${FZF_TMUX_HEIGHT:-40%}" || echo "fzf"
-}
+# Self-contained replacements for the earlier fzf widgets; no external loader.
+# Ctrl-T: insert paths; Alt-C: change directory; Ctrl-R: recall history.
+[[ -o interactive && ${TERM:-dumb} != dumb ]] || return 0
+(( $+commands[fzf] )) || return 0
 
 fzf-file-widget() {
-  LBUFFER="${LBUFFER}$(__fsel)"
-  local ret=$?
-  zle redisplay
-  typeset -f zle-line-init >/dev/null && zle zle-line-init
-  return $ret
-}
-zle     -N   fzf-file-widget
-bindkey '^T' fzf-file-widget
-
-# Ensure precmds are run after cd
-fzf-redraw-prompt() {
-  local precmd
-  for precmd in $precmd_functions; do
-    $precmd
+  emulate -L zsh
+  # fzf may finish before find: a producer SIGPIPE must not discard its selection.
+  setopt localoptions no_pipefail
+  local selected item
+  selected=$(
+    command find . -name .git -prune -o -type f -print0 -o -type d -print0 |
+      command fzf --read0 --print0 --height 40% --reverse --multi
+    local -a result=( "${pipestatus[@]}" )
+    (( result[2] == 0 && (result[1] == 0 || result[1] == 141) ))
+  ) || return 0
+  for item in "${(@0)selected}"; do
+    [[ -n $item ]] && LBUFFER+="${(q)item} "
   done
+  zle redisplay
+}
+fzf-cd-widget() {
+  emulate -L zsh
+  setopt localoptions no_pipefail
+  local selected
+  selected=$(
+    command find . -name .git -prune -o -type d -print0 |
+      command fzf --read0 --print0 --height 40% --reverse --no-multi
+    local -a result=( "${pipestatus[@]}" )
+    (( result[2] == 0 && (result[1] == 0 || result[1] == 141) ))
+  ) || return 0
+  selected=${selected%$'\0'}
+  [[ -n $selected ]] && builtin cd -- "$selected"
   zle reset-prompt
 }
-zle -N fzf-redraw-prompt
-
-# ALT-C - cd into the selected directory
-fzf-cd-widget() {
-  local cmd="${FZF_ALT_C_COMMAND:-"command find -L . -mindepth 1 \\( -path '*/\\.*' -o -fstype 'sysfs' -o -fstype 'devfs' -o -fstype 'devtmpfs' -o -fstype 'proc' \\) -prune \
-    -o -type d -print 2> /dev/null | cut -b3-"}"
-  setopt localoptions pipefail 2> /dev/null
-  local dir="$(eval "$cmd" | FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse $FZF_DEFAULT_OPTS $FZF_ALT_C_OPTS" $(__fzfcmd) +m)"
-  if [[ -z "$dir" ]]; then
-    zle redisplay
-    return 0
-  fi
-  cd "$dir"
-  local ret=$?
-  zle fzf-redraw-prompt
-  typeset -f zle-line-init >/dev/null && zle zle-line-init
-  return $ret
-}
-zle     -N    fzf-cd-widget
-bindkey '\ec' fzf-cd-widget
-
-# CTRL-R - Paste the selected command from history into the command line
 fzf-history-widget() {
-  local selected num
-  setopt localoptions noglobsubst noposixbuiltins pipefail 2> /dev/null
-  selected=( $(fc -rl 1 |
-    FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} $FZF_DEFAULT_OPTS -n2..,.. --tiebreak=index --bind=ctrl-r:toggle-sort $FZF_CTRL_R_OPTS --query=${(qqq)LBUFFER} +m" $(__fzfcmd)) )
-  local ret=$?
-  if [ -n "$selected" ]; then
-    num=$selected[1]
-    if [ -n "$num" ]; then
-      zle vi-fetch-history -n $num
-    fi
-  fi
+  emulate -L zsh
+  setopt localoptions no_pipefail
+  local selected number
+  selected=$(
+    builtin fc -rl 1 | command fzf --height 40% --no-multi --query "$LBUFFER"
+    local -a result=( "${pipestatus[@]}" )
+    (( result[2] == 0 && (result[1] == 0 || result[1] == 141) ))
+  ) || return 0
+  number=${${(z)selected}[1]}
+  [[ $number == <-> ]] && zle vi-fetch-history -n "$number"
   zle redisplay
-  typeset -f zle-line-init >/dev/null && zle zle-line-init
-  return $ret
 }
-zle     -N   fzf-history-widget
-bindkey '^R' fzf-history-widget
-
-fi
+zle -N fzf-file-widget
+zle -N fzf-cd-widget
+zle -N fzf-history-widget
+# Bind both maps so vi-mode may be loaded before or after this plugin.
+bindkey -M emacs '^T' fzf-file-widget
+bindkey -M viins '^T' fzf-file-widget
+bindkey -M emacs '\ec' fzf-cd-widget
+bindkey -M viins '\ec' fzf-cd-widget
+bindkey -M emacs '^R' fzf-history-widget
+bindkey -M viins '^R' fzf-history-widget
