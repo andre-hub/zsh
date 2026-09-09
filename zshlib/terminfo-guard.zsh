@@ -29,6 +29,12 @@
   # dumb und ein leeres TERM sind bewusste Angaben und werden nie angefasst.
   [[ -n $TERM && $TERM != dumb ]] || return 0
 
+  # $TERM kommt bei einer SSH-Sitzung von der Gegenstelle. Bevor der Wert in
+  # einen Dateipfad oder in eine Meldung geht, muss er die Form eines
+  # Terminalnamens haben: kein Schraegstrich, keine Traversierung, keine
+  # Steuerzeichen. Alles andere wird nicht repariert, sondern in Ruhe gelassen.
+  [[ $TERM == [A-Za-z0-9]* && $TERM != *[^A-Za-z0-9._+-]* ]] || return 0
+
   local -a search
   search=(
     ${TERMINFO:+$TERMINFO}
@@ -71,7 +77,9 @@
     if _zsh_terminfo_present "$candidate"; then
       export TERM=$candidate
       unset -f _zsh_terminfo_present
-      print -u2 -r -- "zsh: kein Terminfo fuer '$wanted'; benutze '$candidate'."
+      # ${(V)...}: ein von der Gegenstelle gesetzter Name darf keine
+      # Steuerzeichen unsichtbar ins Terminal schreiben.
+      print -u2 -r -- "zsh: kein Terminfo fuer '${(V)wanted}'; benutze '$candidate'."
       return 0
     fi
   done

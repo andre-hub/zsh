@@ -124,5 +124,17 @@ if (( ! failed )); then
 fi
 stop_shell
 
+# Fall 4: $TERM kommt bei SSH von der Gegenstelle. Ein Wert in Pfadform darf
+# weder einen Dateipfad bilden noch eine Ausweichentscheidung ausloesen.
+command rm -rf -- "$work/home/.terminfo"
+start_shell '../../etc/passwd' "$work/fixture-root" || { print -u2 'FAIL AK-T4: Start blockiert'; failed=1 }
+if (( ! failed )); then
+  [[ $(term_of_child) == '../../etc/passwd' ]] || {
+    print -u2 -r -- "FAIL AK-T4: missgebildetes TERM wurde zu $(term_of_child) veraendert"; failed=1 }
+  [[ -e $work/home/.terminfo ]] && { print -u2 'FAIL AK-T4: Schreibzugriff bei missgebildetem TERM'; failed=1 }
+  print -r -- 'PASS AK-T4_MissgebildetesTermUnberuehrt'
+fi
+stop_shell
+
 (( failed )) && { print -u2 'FAIL terminfo-guard'; exit 1 }
 print 'PASS terminfo-guard'
