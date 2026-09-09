@@ -92,6 +92,25 @@ check_zle() {
 
 term_of_child() { print -r -- "${$(<"$work/ready")#TERM=}" }
 
+# Der Uberspace-Installer verifiziert eine frische Anmeldung und verlangt dabei
+# einen restlos stillen Start. Eine einzige Zeile auf stdout oder stderr laesst
+# die Verifikation fehlschlagen und die Installation zurueckrollen -- genau das
+# ist am 2026-09-08 auf mehreren Konten passiert, weil der Guard sein Ausweichen
+# gemeldet hat. Diese Pruefung haelt die Stille fest, in allen drei Lagen.
+check_silence() {
+  local label term out
+  for term in "$probe" nicht-existentes-terminal-xyz xterm '../../etc/passwd'; do
+    out=$(HOME="$work/silence" ZSH_PUBLIC_ROOT="$work/fixture-root" TERM="$term" \
+      command zsh -f -c "source '$root/zshlib/terminfo-guard.zsh'" 2>&1)
+    if [[ -n $out ]]; then
+      print -u2 -r -- "FAIL AK-T5: Start nicht still bei TERM=${(qqq)term}: ${(qqq)out}"
+      return 1
+    fi
+  done
+  print -r -- 'PASS AK-T5_StartBleibtStill'
+}
+mkdir -p "$work/silence"
+
 # Fall 1: mitgelieferte Quelle vorhanden -> benutzerlokal einspielen, $TERM bleibt.
 start_shell "$probe" "$work/fixture-root" || { print -u2 'FAIL AK-T1: Start ohne Terminfo blockiert'; failed=1 }
 if (( ! failed )); then
@@ -135,6 +154,8 @@ if (( ! failed )); then
   print -r -- 'PASS AK-T4_MissgebildetesTermUnberuehrt'
 fi
 stop_shell
+
+check_silence || failed=1
 
 (( failed )) && { print -u2 'FAIL terminfo-guard'; exit 1 }
 print 'PASS terminfo-guard'

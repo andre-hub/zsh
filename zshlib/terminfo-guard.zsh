@@ -77,9 +77,11 @@
     if _zsh_terminfo_present "$candidate"; then
       export TERM=$candidate
       unset -f _zsh_terminfo_present
-      # ${(V)...}: ein von der Gegenstelle gesetzter Name darf keine
-      # Steuerzeichen unsichtbar ins Terminal schreiben.
-      print -u2 -r -- "zsh: kein Terminfo fuer '${(V)wanted}'; benutze '$candidate'."
+      # Bewusst ohne Meldung. Der Uberspace-Installer verifiziert eine frische
+      # Anmeldung und verlangt dabei einen restlos stillen Start; eine Zeile auf
+      # stderr laesst die Verifikation fehlschlagen und die Installation
+      # zurueckrollen. Genau das ist am 2026-09-08 auf mehreren Konten passiert.
+      # Der gewaehlte Eintrag steht ohnehin in $TERM.
       return 0
     fi
   done
