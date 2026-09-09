@@ -11,6 +11,7 @@ export PATH
 
 typeset -ga _zsh_loaded_modules
 for _zsh_public_module in \
+  terminfo-guard.zsh \
   completion.zsh directories.zsh history.zsh key-bindings.zsh \
   edit-command-line.zsh misc.zsh grep.zsh theme-and-appearance.zsh \
   git.zsh functions.zsh packer.zsh aliases.zsh \

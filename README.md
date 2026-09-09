@@ -17,6 +17,19 @@ Existing startup files, including dangling links, are never overwritten: back
 up conflicts manually. Links use `$ZDOTDIR` (default `$HOME`); keep the checkout.
 To make zsh your default login shell, use your system's shell-selection tool.
 
+## Terminals without a matching terminfo entry
+
+Hosts that were set up minimally often lack the terminfo entry a remote tmux
+exports, `tmux-256color` in particular. Without it the terminal description
+falls back to a stand-in and key sequences, colors and capabilities no longer
+match what the terminal actually sends. `zshlib/terminfo-guard.zsh` runs before
+the key bindings and repairs that at the source: if `$TERM` is absent from every
+terminfo database, it compiles the bundled `terminfo/$TERM.ti` into the
+account-local `~/.terminfo` with `tic`, which fixes the entry for every program,
+not just zsh. Only if that is impossible does it fall back to the closest entry
+that does exist, and it never touches a `$TERM` that resolves. `tests/terminfo-guard.zsh`
+covers all three cases on a real pty.
+
 ## Modules and plugins
 
 All modules explicitly listed in `zshrc` are enabled; plugins are opt-in.
