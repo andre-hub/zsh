@@ -78,9 +78,90 @@ trap 'exit 143' TERM
     stub fzf 'cat'
     print -r -- 'touch forbidden' > "$HOME/.zsh_bookmarks"
     local captured=''
-    print() { if [[ $1 == -z ]]; then captured=$3; else builtin print "$@"; fi }
-    bookmark || return
+    print() { if [[ $1 == -rz ]]; then captured=$3; else builtin print "$@"; fi }
+    bookmark --legacy || return
     [[ $captured == 'touch forbidden' && ! -e forbidden ]]
+  }
+  bookmark_favorites() {
+    stub fzf 'head -n 1'
+    local _zsh_bookmark_file="$work/favorites.tsv"
+    print -r -- $'Test\tQuoted template\tprintf '\''%s'\'' '\''two words'\''; $(touch forbidden)' > "$_zsh_bookmark_file"
+    local REPLY
+    _zsh_bookmark_select || return
+    [[ $REPLY == 'printf '\''%s'\'' '\''two words'\''; $(touch forbidden)' && ! -e forbidden ]] || return
+    print -r -- $'Test\tEmpty URL\tyt-dlp '\'''\' > "$_zsh_bookmark_file"
+    _zsh_bookmark_select || return
+    [[ $REPLY == "yt-dlp ''" ]]
+  }
+  bookmark_cancel() {
+    local _zsh_bookmark_file="$work/cancel.tsv"
+    local -x TRACE="$work/cancel-marker"
+    print -r -- $'Tools\tCancellation fixture\tprintf fixture' > "$_zsh_bookmark_file"
+    stub fzf 'printf called > "$TRACE"; exit 130'
+    local BUFFER='keep this' CURSOR=3 REPLY=unchanged
+    zle() { :; }
+    bookmark-widget || return
+    [[ $(<"$TRACE") == called && $BUFFER == 'keep this' && $CURSOR == 3 && $REPLY == unchanged ]]
+  }
+  bookmark_real_stack_literal() {
+    local _zsh_bookmark_file="$work/literal-stack.tsv" captured
+    local command_text='printf "%s\n" "C:\folder\name"'
+    print -r -- $'Tools\tLiteral backslashes\t'"$command_text" > "$_zsh_bookmark_file"
+    stub fzf 'head -n 1'
+    bookmark || return
+    read -rz captured || return
+    [[ $captured == "$command_text" && $captured != *$'\n'* ]]
+  }
+  bookmark_ansi_display_only() {
+    local _zsh_bookmark_file="$work/colored.tsv" REPLY
+    print -r -- $'Media\tVideo template\tyt-dlp '\'''\' > "$_zsh_bookmark_file"
+    stub fzf 'cat > "$TRACE"; head -n 1 "$TRACE"'
+    _zsh_bookmark_select || return
+    [[ $(<"$TRACE") == *$'\e[1;36mMedia\e[0m'* && $REPLY == "yt-dlp ''" && $REPLY != *$'\e'* ]] || return
+    # Match real fzf --ansi output, which omits its display escape sequences.
+    stub fzf 'cat >/dev/null; printf "1\tMedia\tVideo template\tyt-dlp '\'''\''\n"'
+    _zsh_bookmark_select || return
+    [[ $REPLY == "yt-dlp ''" && $REPLY != *$'\e'* ]] || return
+    stub fzf 'cat >/dev/null; printf "1\tMedia\tVideo template\ttouch forbidden\n"'
+    REPLY=unchanged
+    _zsh_bookmark_select && return 1
+    [[ $REPLY == unchanged && ! -e forbidden ]]
+  }
+  bookmark_all() {
+    stub fzf 'tail -n 1'
+    local _zsh_bookmark_file="$work/all.tsv" REPLY
+    print -r -- $'Test\tFavorite\tprintf favorite' > "$_zsh_bookmark_file"
+    print -r -- 'printf legacy' > "$HOME/.zsh_bookmarks"
+    _zsh_bookmark_select --all || return
+    [[ $REPLY == 'printf legacy' ]] || return
+    stub fzf 'head -n 1'
+    _zsh_bookmark_select --all || return
+    [[ $REPLY == 'printf favorite' ]]
+  }
+  bookmark_invalid() {
+    local _zsh_bookmark_file="$work/invalid.tsv" REPLY=unchanged
+    print -r -- 'invalid record' > "$_zsh_bookmark_file"
+    _zsh_bookmark_select && return 1
+    [[ $REPLY == unchanged ]] || return
+    bookmark --invalid && return 1
+    path=("$work/no-tools")
+    bookmark; local result=$?
+    (( result == 127 ))
+  }
+  bookmark_provider() {
+    local _zsh_bookmark_file="$work/provider-missing.tsv" REPLY
+    local provider_file="$work/provider.tsv"
+    print -r -- $'Tools\tSynthetic provider\tprintf '\'''\' > "$provider_file"
+    _zsh_bookmark_extra() { _zsh_bookmark_read "$provider_file"; }
+    stub fzf 'head -n 1'
+    _zsh_bookmark_select || return
+    [[ $REPLY == "printf ''" ]] || return
+    print -r -- 'printf legacy' > "$HOME/.zsh_bookmarks"
+    _zsh_bookmark_extra() { return 37; }
+    _zsh_bookmark_select --legacy || return
+    [[ $REPLY == 'printf legacy' ]] || return
+    _zsh_bookmark_select; local result=$?
+    (( result == 37 ))
   }
   pdf_cases() {
     stub gs 'for arg do case "$arg" in -sOutputFile=*) out=${arg#*=};; esac; done; printf pdf > "$out"; exit "${GS_FAILURE:-0}"'
@@ -161,6 +242,13 @@ trap 'exit 143' TERM
   check Shebang_ExplicitEditorPathsAndNonexec shebang_editor_paths
   check Shebang_InterpreterValidation shebang_invalid
   check Bookmark_EditOnly bookmark_edit_only
+  check Bookmark_FavoritesLiteralTemplates bookmark_favorites
+  check Bookmark_CancelPreservesBuffer bookmark_cancel
+  check Bookmark_RealStackPreservesBackslashes bookmark_real_stack_literal
+  check Bookmark_AnsiDisplayOnlyAndRowIntegrity bookmark_ansi_display_only
+  check Bookmark_AllIncludesBothSources bookmark_all
+  check Bookmark_InvalidAndMissingFzf bookmark_invalid
+  check Bookmark_ExplicitProviderAndLegacyBypass bookmark_provider
   check PDF_OutputsAndFailureCleanup pdf_cases
   check PDF_RacingOutputProtected pdf_race
   check PDF_UnavailableDirectoryNoPathDisclosure pdf_directory_failure_private

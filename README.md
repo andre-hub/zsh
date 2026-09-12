@@ -66,7 +66,7 @@ Set `FZF_COMPLETION_TRIGGER` (default `**`) or `apt_pref` (`apt-get`, `apt`,
 | `repo-open`, `repo-issues`, `repo-prs` | Browser / read-only lists (`gh` or `tea` + `jq`); default origin, optional `--remote NAME` |
 | `repo-pr [--base BRANCH]` | Push current branch without force, then open PR form (default base main); confirm creation in browser |
 | `..` … `.....`, `md`, `mcd`, `rd` | Parent navigation; mkdir -p; mkdir + cd; recursive removal after one confirmation |
-| `ll`, `la`, `lsa`, `bookmark` | Listings; select from `~/.zsh_bookmarks` with fzf into edit buffer, never auto-execute |
+| `ll`, `la`, `lsa`, `bookmark` | Listings; categorized searchable bookmarks with fzf into edit buffer, never auto-execute |
 | `dl`, `pdfmerge`, `pdfresize`, `yt` | aria2 downloads; Ghostscript + Python 3 PDF merge/resize; yt-dlp |
 | `chmodx`, `shebang zsh FILE`, `hardwareinfo` | Make executable then run; create new script and open editor; CPU/RAM summary |
 | `spectrum_ls`, `spectrum_bls` | Foreground/background color charts; upstream attribution in `LICENSE.spectrum` |
@@ -89,6 +89,35 @@ repository URL, including any port/subpath), and `forgeLogin` (tea login), all
 under `remote.NAME`. The tea login URL must match the server base including
 subpath. GitHub lists need `gh`; Gitea lists need `tea` + `jq`. Browser/push
 helpers work without these CLIs. PR push targets must match the selected repo.
+
+## Command bookmarks
+
+`bookmark` or **Alt-B** opens a searchable list with category colors and
+highlighted matches. Enter copies the original command into the edit buffer,
+without display color codes; it never runs the command. Press Enter again only
+after checking or completing it. Escape preserves the existing buffer and
+cursor. Alt-B is bound in Emacs and Vi insert mode; Ctrl-B is unchanged.
+
+Provide your own optional `~/.config/zsh/bookmarks.tsv`, or set
+`ZSH_BOOKMARK_FILE` before starting the shell. No command list is bundled.
+Each nonempty line has three fields separated by literal tabs:
+`category<TAB>description<TAB>command`. Lines beginning with `#` are comments.
+Commands are read as data, not sourced or evaluated; quoting and empty argument
+templates remain literal. Do not use embedded tabs, multiline commands or
+secrets. Category names are arbitrary; colors cycle independently of their text.
+
+`bookmark --legacy` reads only the existing `~/.zsh_bookmarks` (one command per
+line), while `bookmark --all` combines it with the TSV entries. Neither file nor
+shell history is changed. Missing optional sources are skipped; an empty list
+is reported. `fzf` is required and is not installed automatically.
+
+An explicitly loaded, trusted extension may define `_zsh_bookmark_extra` to add
+entries when the selector is opened. It can call `_zsh_bookmark_read FILE` to
+append another TSV to the selector-local `entries` and `rows` arrays. Return
+nonzero to stop selection on failure. The selector does not discover or load
+extensions, and `--legacy` does not call this hook. Keep target-specific lists
+and providers outside this repository. Open a new shell after configuration
+changes.
 
 Tests: `zsh -d -f tests/all.zsh`. Platform stubs are not native platform tests.
 License: [MIT](LICENSE).

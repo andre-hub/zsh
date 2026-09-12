@@ -85,15 +85,106 @@ pdfresize() {
     -dMonoImageDownsampleType=/Bicubic -dMonoImageResolution=$dpi "${1:a}"
 }
 
+# Optional user TSV; an explicitly loaded provider may add entries.
+typeset -g _zsh_bookmark_file=${ZSH_BOOKMARK_FILE:-$HOME/.config/zsh/bookmarks.tsv}
+
+_zsh_bookmark_read() {
+  emulate -L zsh
+  local line category description command_text
+  [[ -r $1 ]] || { print -u2 'bookmark: favorites file is missing'; return 1; }
+  while IFS= read -r line || [[ -n $line ]]; do
+    [[ -z $line || $line == \#* ]] && continue
+    [[ $line == *$'\t'*$'\t'* ]] || { print -u2 'bookmark: invalid favorites record'; return 1; }
+    category=${line%%$'\t'*}
+    line=${line#*$'\t'}
+    description=${line%%$'\t'*}
+    command_text=${line#*$'\t'}
+    [[ -n $category && -n $description && -n $command_text && $command_text != *$'\t'* ]] || {
+      print -u2 'bookmark: invalid favorites record'; return 1
+    }
+    entries+=("$command_text")
+    rows+=("${#entries}"$'\t'"$category"$'\t'"$description"$'\t'"$command_text")
+  done < "$1"
+}
+
+_zsh_bookmark_select() {
+  emulate -L zsh
+  (( $# <= 1 )) && [[ ${1:-} == (''|--legacy|--all) ]] || {
+    print -u2 'usage: bookmark [--legacy|--all]'; return 2
+  }
+  (( $+commands[fzf] )) || { print -u2 'bookmark: fzf is not installed'; return 127; }
+  local mode=${1:-} line category description command_text selected number color rest
+  local -a entries=() rows=() display_rows=() palette=(36 34 33 32 35 37)
+  local -A category_colors=()
+  if [[ $mode != --legacy ]]; then
+    if [[ -r $_zsh_bookmark_file ]]; then
+      _zsh_bookmark_read "$_zsh_bookmark_file" || return $?
+    fi
+    if (( $+functions[_zsh_bookmark_extra] )); then
+      _zsh_bookmark_extra || return $?
+    fi
+  fi
+  if [[ $mode == --legacy || $mode == --all ]]; then
+    if [[ -r $HOME/.zsh_bookmarks ]]; then
+      while IFS= read -r line || [[ -n $line ]]; do
+        [[ -n $line ]] || continue
+        entries+=("$line")
+        rows+=("${#entries}"$'\tLegacy\tBookmark\t'"$line")
+      done < "$HOME/.zsh_bookmarks"
+    elif [[ $mode == --legacy ]]; then
+      print -u2 'bookmark: legacy bookmark file is missing'; return 1
+    fi
+  fi
+  (( ${#entries} )) || { print -u2 'bookmark: no entries'; return 1; }
+  # Color only the display category, never the command or authoritative rows.
+  for line in "${rows[@]}"; do
+    number=${line%%$'\t'*}
+    rest=${line#*$'\t'}
+    category=${rest%%$'\t'*}
+    rest=${rest#*$'\t'}
+    if [[ -z ${category_colors[$category]:-} ]]; then
+      color=$palette[$(( ${#category_colors} % ${#palette} + 1 ))]
+      category_colors[$category]=$color
+    fi
+    color=$category_colors[$category]
+    display_rows+=("$number"$'\t\e[1;'"${color}m${category}"$'\e[0m\t'"$rest")
+  done
+  # No inherited execute/preview bindings; commands are opaque data, never eval.
+  selected=$(FZF_DEFAULT_OPTS= FZF_DEFAULT_OPTS_FILE=/dev/null command fzf \
+    --ansi --no-multi --delimiter=$'\t' --with-nth=2.. --height=60% --reverse \
+    --color='prompt:cyan,pointer:magenta,marker:green,hl:yellow,hl+:yellow,header:blue,info:cyan' \
+    --prompt='Bookmarks > ' --header='Search · Enter: edit · Esc: cancel' \
+    <<< "${(F)display_rows}") || return $?
+  number=${selected%%$'\t'*}
+  [[ $number == <1-> ]] && (( number <= ${#entries} )) || return 1
+  # fzf --ansi strips presentation escapes; accept only the exact known row
+  # (or its exact colored representation), then return the separate raw entry.
+  [[ $selected == "$rows[number]" || $selected == "$display_rows[number]" ]] || return 1
+  REPLY=$entries[number]
+}
+
 bookmark() {
   emulate -L zsh
-  (( $# == 0 )) || { print -u2 'usage: bookmark'; return 2; }
-  [[ -r $HOME/.zsh_bookmarks ]] || { print -u2 'bookmark: bookmark file is missing'; return 1; }
-  (( $+commands[fzf] )) || { print -u2 'bookmark: fzf is not installed'; return 127; }
-  local selected
-  selected=$(FZF_DEFAULT_OPTS= FZF_DEFAULT_OPTS_FILE=/dev/null command fzf --no-multi < "$HOME/.zsh_bookmarks" 2>/dev/null) || return $?
-  [[ -n $selected ]] && print -z -- "$selected"
+  local REPLY
+  _zsh_bookmark_select "$@" || return $?
+  print -rz -- "$REPLY"
 }
+
+bookmark-widget() {
+  emulate -L zsh
+  local REPLY
+  if _zsh_bookmark_select; then
+    BUFFER=$REPLY
+    CURSOR=${#BUFFER}
+  fi
+  zle redisplay
+}
+
+if [[ -o interactive ]]; then
+  zle -N bookmark-widget
+  bindkey -M emacs '\eb' bookmark-widget
+  bindkey -M viins '\eb' bookmark-widget
+fi
 
 chmodx() {
   emulate -L zsh
